@@ -53,22 +53,24 @@ aframeReady(() => {
       // Map desired local forward axis to the world direction.
       // If axis is +z (model faces +Z), invert.
       switch (this.data.forwardAxis) {
-        case '+z':
+        case "+z":
           direction.multiplyScalar(-1); // flip
           break;
-        case '-z':
+        case "-z":
           break; // already correct
-        case '+x': {
+        case "+x": {
           // derive +X world: take current forward (-Z) then rotate 90deg CCW around Y
           const f = direction.clone();
           direction.set(-f.z, f.y, f.x); // rough yaw +90
-          break; }
-        case '-x': {
+          break;
+        }
+        case "-x": {
           const f = direction.clone();
           direction.set(f.z, f.y, -f.x); // yaw -90
-          break; }
-        case '+y':
-        case '-y':
+          break;
+        }
+        case "+y":
+        case "-y":
           // For vertical axes, fallback to forward; vertical firing uncommon. Could refine if needed.
           break;
         default:

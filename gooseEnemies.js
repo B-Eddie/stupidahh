@@ -130,7 +130,7 @@
       offset: { type: "vec3", default: { x: 0, y: 0.6, z: 0.6 } },
       activationRadius: { type: "number", default: 8 },
       variance: { type: "number", default: 400 },
-      forwardAxis: { type: 'string', default: '-z' }, // enemy model facing
+      forwardAxis: { type: "string", default: "-z" }, // enemy model facing
     },
     init() {
       this.last = 0;
@@ -162,16 +162,24 @@
       o3.localToWorld(this.tmpO);
       // Base forward (-Z local) then adjust depending on forwardAxis
       o3.getWorldDirection(this.tmpDir); // world forward for local -Z
-      switch(this.data.forwardAxis){
-        case '+z':
+      switch (this.data.forwardAxis) {
+        case "+z":
           this.tmpDir.multiplyScalar(-1); // invert
           break;
-        case '+x': { // rotate +90 yaw
-          const f=this.tmpDir.clone(); this.tmpDir.set(-f.z, f.y, f.x); break; }
-        case '-x': { // rotate -90 yaw
-          const f=this.tmpDir.clone(); this.tmpDir.set(f.z, f.y, -f.x); break; }
-        case '+y':
-        case '-y':
+        case "+x": {
+          // rotate +90 yaw
+          const f = this.tmpDir.clone();
+          this.tmpDir.set(-f.z, f.y, f.x);
+          break;
+        }
+        case "-x": {
+          // rotate -90 yaw
+          const f = this.tmpDir.clone();
+          this.tmpDir.set(f.z, f.y, -f.x);
+          break;
+        }
+        case "+y":
+        case "-y":
           // keep horizontal forward; vertical attack uncommon
           break;
         default:
