@@ -13,7 +13,7 @@
 
   async function fetchGeminiRoasts(options = {}) {
     const {
-      apiKey = window.GEMINI_API_KEY || localStorage.getItem("GEMINI_API_KEY"),
+      apiKey = window.NEXT_PUBLIC_GEMINI_API_KEY || localStorage.getItem("NEXT_PUBLIC_GEMINI_API_KEY"),
       model = "gemini-1.5-flash",
       count = 24,
       temperature = 0.9,
