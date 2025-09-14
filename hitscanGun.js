@@ -42,70 +42,37 @@ aframeReady(() => {
     },
     computeDirection() {
       const direction = new THREE.Vector3();
-      // If AR and flag set, use camera forward (flat) to feel like phone reticle or head gaze
       const scene = this.el.sceneEl;
       const isAR = scene && scene.is && scene.is("ar-mode");
       if (isAR && this.data.useCameraForwardInAR && scene.camera) {
         scene.camera.getWorldDirection(direction);
         return direction.normalize();
       }
-      // Otherwise use configured local axis of gun entity
-      const obj = this.el.object3D;
+      // Base: A-Frame considers object's -Z as forward for look-controls. getWorldDirection returns -Z transformed.
+      this.el.object3D.getWorldDirection(direction); // yields world forward (-Z local)
+      // Map desired local forward axis to the world direction.
+      // If axis is +z (model faces +Z), invert.
       switch (this.data.forwardAxis) {
-        case "+z":
-          direction.set(0, 0, 1);
+        case '+z':
+          direction.multiplyScalar(-1); // flip
           break;
-        case "-z":
-          direction.set(0, 0, -1);
-          break;
-        case "+x":
-          direction.set(1, 0, 0);
-          break;
-        case "-x":
-          direction.set(-1, 0, 0);
-          break;
-        case "+y":
-          direction.set(0, 1, 0);
-          break;
-        case "-y":
-          direction.set(0, -1, 0);
+        case '-z':
+          break; // already correct
+        case '+x': {
+          // derive +X world: take current forward (-Z) then rotate 90deg CCW around Y
+          const f = direction.clone();
+          direction.set(-f.z, f.y, f.x); // rough yaw +90
+          break; }
+        case '-x': {
+          const f = direction.clone();
+          direction.set(f.z, f.y, -f.x); // yaw -90
+          break; }
+        case '+y':
+        case '-y':
+          // For vertical axes, fallback to forward; vertical firing uncommon. Could refine if needed.
           break;
         default:
-          direction.set(0, 0, -1);
           break;
-      }
-      obj.getWorldDirection(direction); // start with -Z forward; adjust if custom axis differs
-      // If custom axis not -Z, transform manually from local space
-      if (this.data.forwardAxis !== "-z") {
-        const basis = new THREE.Vector3();
-        // Build local axis vector
-        switch (this.data.forwardAxis) {
-          case "+z":
-            basis.set(0, 0, 1);
-            break;
-          case "+x":
-            basis.set(1, 0, 0);
-            break;
-          case "-x":
-            basis.set(-1, 0, 0);
-            break;
-          case "+y":
-            basis.set(0, 1, 0);
-            break;
-          case "-y":
-            basis.set(0, -1, 0);
-            break;
-          default:
-            basis.set(0, 0, -1);
-            break;
-        }
-        // Apply entity world rotation to basis
-        basis
-          .applyQuaternion(
-            this.el.object3D.getWorldQuaternion(new THREE.Quaternion())
-          )
-          .normalize();
-        direction.copy(basis);
       }
       return direction.normalize();
     },

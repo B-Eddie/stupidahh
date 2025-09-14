@@ -130,6 +130,7 @@
       offset: { type: "vec3", default: { x: 0, y: 0.6, z: 0.6 } },
       activationRadius: { type: "number", default: 8 },
       variance: { type: "number", default: 400 },
+      forwardAxis: { type: 'string', default: '-z' }, // enemy model facing
     },
     init() {
       this.last = 0;
@@ -159,9 +160,24 @@
       const o3 = this.el.object3D;
       this.tmpO.set(this.data.offset.x, this.data.offset.y, this.data.offset.z);
       o3.localToWorld(this.tmpO);
-      this.tmpDir.set(0, 0, -1);
-      o3.localToWorld(this.tmpDir);
-      this.tmpDir.sub(o3.getWorldPosition(new THREE.Vector3())).normalize();
+      // Base forward (-Z local) then adjust depending on forwardAxis
+      o3.getWorldDirection(this.tmpDir); // world forward for local -Z
+      switch(this.data.forwardAxis){
+        case '+z':
+          this.tmpDir.multiplyScalar(-1); // invert
+          break;
+        case '+x': { // rotate +90 yaw
+          const f=this.tmpDir.clone(); this.tmpDir.set(-f.z, f.y, f.x); break; }
+        case '-x': { // rotate -90 yaw
+          const f=this.tmpDir.clone(); this.tmpDir.set(f.z, f.y, -f.x); break; }
+        case '+y':
+        case '-y':
+          // keep horizontal forward; vertical attack uncommon
+          break;
+        default:
+          break;
+      }
+      this.tmpDir.normalize();
       const end = this.tmpO
         .clone()
         .addScaledVector(this.tmpDir, this.data.range);
