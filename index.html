@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A-Frame FPS (Desktop + Quest 3)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- A-Frame core -->
+    <script src="https://unpkg.com/aframe@1.5.0/dist/aframe.min.js"></script>
+    <!-- aframe-extras for movement-controls (smooth locomotion + thumbstick) -->
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+
+    <!-- Custom scripts moved to end of body -->
+
+        // --- Round Manager ---
+        // Handles round reset and ghost replay
+        AFRAME.registerComponent('round-manager', {
+          init: function () {
+            this.enemies = Array.from(document.querySelectorAll('[hittable]'));
+            this.rig = document.querySelector('#rig');
+            this.startPos = new THREE.Vector3(0, 0, 0);
+            this.startRot = new THREE.Euler(0, 0, 0);
+            this.ghostRecording = null;
+            window.playerActionRecorder.start();
+          },
+          tick: function () {
+            // Check if all enemies are gone (for now: if all are invisible)
+            const allDead = this.enemies.every(e => !e.getAttribute('visible') || e.getAttribute('visible') === false);
+            if (allDead && window.playerActionRecorder.isRecording) {
+              // End round, reset player, save recording
+              window.playerActionRecorder.stop();
+              this.ghostRecording = window.playerActionRecorder.getRecording();
+              this.resetPlayer();
+              this.spawnEnemies();
+              this.spawnGhost();
+              window.playerActionRecorder.start();
+            }
+          },
+          resetPlayer: function () {
+            // Move player rig to start
+            this.rig.setAttribute('position', '0 0 0');
+            this.rig.setAttribute('rotation', '0 0 0');
+          },
+          spawnEnemies: function () {
+            // Respawn enemies (make visible)
+            this.enemies.forEach(e => e.setAttribute('visible', true));
+          },
+          spawnGhost: function () {
+            if (!this.ghostRecording || !this.ghostRecording.length) return;
+            // Remove previous ghost if any
+            const oldGhost = document.querySelector('#ghostRig');
+            if (oldGhost) oldGhost.parentNode.removeChild(oldGhost);
+            // Create ghost rig
+            const ghost = document.createElement('a-entity');
+            ghost.setAttribute('id', 'ghostRig');
+            ghost.setAttribute('ghost-replay', '');
+            this.rig.parentNode.appendChild(ghost);
+          }
+        });
+
+        // --- Ghost Replay Component ---
+        // Replays the previous round's actions
+        AFRAME.registerComponent('ghost-replay', {
+          init: function () {
+            this.recording = window.playerActionRecorder.recording.slice();
+            this.frameIdx = 0;
+            this.lastTime = null;
+            // Add ghost gun visuals
+            const gun = document.createElement('a-box');
+            gun.setAttribute('position', '0 -0.02 -0.08');
+            gun.setAttribute('depth', '0.24');
+            gun.setAttribute('height', '0.06');
+            gun.setAttribute('width', '0.06');
+            gun.setAttribute('color', '#444');
+            this.el.appendChild(gun);
+          },
+          tick: function (time, dt) {
+            if (!this.recording || this.frameIdx >= this.recording.length) return;
+            const frame = this.recording[this.frameIdx];
+            this.el.setAttribute('position', `${frame.pos.x} ${frame.pos.y} ${frame.pos.z}`);
+            this.el.setAttribute('rotation', `${THREE.Math.radToDeg(frame.rot.x)} ${THREE.Math.radToDeg(frame.rot.y)} ${THREE.Math.radToDeg(frame.rot.z)}`);
+            // Fire shots if any in this frame
+            if (frame.shots && frame.shots.length) {
+              frame.shots.forEach(() => this.fireGhostShot());
+            }
+            this.frameIdx++;
+          },
+          fireGhostShot: function () {
+            // Visualize ghost tracer
+            const muzzle = this.el.object3D;
+            const origin = new THREE.Vector3();
+            const direction = new THREE.Vector3(0, 0, -1);
+            muzzle.getWorldPosition(origin);
+            muzzle.getWorldDirection(direction);
+            const tracerLen = 30;
+            const end = origin.clone().add(direction.clone().multiplyScalar(tracerLen));
+            const line = document.createElement('a-entity');
+            line.setAttribute('line', `start: ${origin.x} ${origin.y} ${origin.z}; end: ${end.x} ${end.y} ${end.z}; opacity: 0.5`);
+            line.setAttribute('material', 'shader: line; linewidth: 2');
+            this.el.sceneEl.appendChild(line);
+            setTimeout(() => line.remove(), 60);
+          }
+        });
+    </script>
+  </head>
+
+  <body style="margin: 0">
+    <a-scene
+      renderer="antialias: true; physicallyCorrectLights: true"
+      webxr="optionalFeatures: local-floor, bounded-floor, hand-tracking, layers"
+      background="color: #1c1f24"
+      cursor="rayOrigin: mouse"
+      <!--
+      lets
+      you
+      click
+      in
+      desktop
+      mode
+      --
+    >
+      >
+
+      <!-- Lighting -->
+      <a-entity light="type: hemisphere; intensity: 0.6"></a-entity>
+      <a-entity
+        light="type: directional; intensity: 0.8"
+        position="1 3 2"
+      ></a-entity>
+
+      <!-- Ground -->
+      <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#3a3f47"
+      ></a-plane>
+
+      <!-- Some targets -->
+      <a-box
+        position="0 1.5 -8"
+        depth="1"
+        height="1"
+        width="1"
+        color="#7BC8A4"
+        hittable
+      ></a-box>
+      <a-box
+        position="2 2.0 -10"
+        depth="1"
+        height="1"
+        width="1"
+        color="#FFC65D"
+        hittable
+      ></a-box>
+      <a-box
+        position="-2 1.0 -12"
+        depth="1"
+        height="1"
+        width="1"
+        color="#FF6F61"
+        hittable
+      ></a-box>
+
+      <!-- PLAYER RIG -->
+      <!-- movement-controls (from aframe-extras) gives:
+           - Desktop: WASD + Shift, mouse-look
+           - VR (Quest 3): left thumbstick for smooth locomotion
+      -->
+      <a-entity id="rig" movement-controls="fly: false; speed: 0.14">
+        <a-entity
+          id="camera"
+          camera
+          position="0 1.6 0"
+          look-controls="pointerLockEnabled: true"
+        ></a-entity>
+
+        <!-- Left hand: locomotion only (no gun) -->
+        <!-- oculus-touch-controls maps fine to Quest 3 controllers -->
+        <a-entity
+          id="leftHand"
+          hand-controls="hand: left; handModelStyle: lowPoly; color: #bbb"
+          oculus-touch-controls="hand: left"
+          vive-controls="hand: left"
+          windows-motion-controls="hand: left"
+        >
+        </a-entity>
+
+        <!-- Right hand: hold the gun and shoot with trigger -->
+        <a-entity
+          id="rightHand"
+          hand-controls="hand: right; handModelStyle: lowPoly; color: #ddd"
+          oculus-touch-controls="hand: right"
+          vive-controls="hand: right"
+          windows-motion-controls="hand: right"
+          hitscan-gun
+        >
+          <!-- Simple “gun” placeholder; replace with your GLB model -->
+          <a-box
+            position="0 -0.02 -0.08"
+            depth="0.24"
+            height="0.06"
+            width="0.06"
+            color="#222"
+          ></a-box>
+          <a-cylinder
+            position="0 -0.02 -0.22"
+            radius="0.02"
+            height="0.2"
+            rotation="90 0 0"
+            color="#333"
+          ></a-cylinder>
+        </a-entity>
+      </a-entity>
+
+      <!-- Enter/exit VR button is built-in; Quest 3 users tap it to switch into VR -->
+    </a-scene>
+    <script>
+      // --- Player Action Recorder ---
+      // Records position, rotation, and shots each frame
+      window.playerActionRecorder = {
+        recording: [],
+        isRecording: false,
+        start() {
+          this.recording = [];
+          this.isRecording = true;
+        },
+        stop() {
+          this.isRecording = false;
+        },
+        recordFrame(pos, rot) {
+          if (!this.isRecording) return;
+          this.recording.push({
+            time: performance.now(),
+            pos: { x: pos.x, y: pos.y, z: pos.z },
+            rot: { x: rot.x, y: rot.y, z: rot.z },
+            shots: [],
+          });
+        },
+        recordShot() {
+          if (!this.isRecording || !this.recording.length) return;
+          this.recording[this.recording.length - 1].shots.push(
+            performance.now()
+          );
+        },
+        getRecording() {
+          return this.recording;
+        },
+      };
+
+      // Simple hitscan "gun" component: fires a ray on trigger
+      AFRAME.registerComponent("hitscan-gun", {
+        init() {
+          const el = this.el;
+          // Listen to controller button events
+          el.addEventListener("triggerdown", () => {
+            this.fire();
+            window.playerActionRecorder.recordShot();
+          });
+          // Desktop: left mouse for testing
+          window.addEventListener("mousedown", (e) => {
+            if (AFRAME.scenes[0].is("vr-mode")) return; // ignore in VR
+            if (e.button === 0) {
+              this.fire();
+              window.playerActionRecorder.recordShot();
+            }
+          });
+        },
+        fire() {
+          const muzzle = this.el.object3D;
+          // Build a ray from the gun's forward direction
+          const origin = new THREE.Vector3();
+          const direction = new THREE.Vector3(0, 0, -1);
+          muzzle.getWorldPosition(origin);
+          muzzle.getWorldDirection(direction);
+
+          // Visualize a brief tracer
+          const tracerLen = 30; // meters
+          const end = origin
+            .clone()
+            .add(direction.clone().multiplyScalar(tracerLen));
+          const line = document.createElement("a-entity");
+          line.setAttribute(
+            "line",
+            `start: ${origin.x} ${origin.y} ${origin.z}; end: ${end.x} ${end.y} ${end.z}; opacity: 0.9`
+          );
+          line.setAttribute("material", "shader: line; linewidth: 4");
+          this.el.sceneEl.appendChild(line);
+          setTimeout(() => line.remove(), 60);
+
+          // Do a raycast to detect hits (e.g., enemies)
+          const raycaster = new THREE.Raycaster(
+            origin,
+            direction,
+            0,
+            tracerLen
+          );
+          const meshes = [];
+          this.el.sceneEl.object3D.traverse((obj) => {
+            if (obj.userData && obj.userData.hittable) meshes.push(obj);
+          });
+          const hits = raycaster.intersectObjects(meshes, true);
+          if (hits.length) {
+            const hit = hits[0].object;
+            // Example reaction: briefly tint the hit object
+            const old =
+              hit.material && hit.material.color
+                ? hit.material.color.clone()
+                : null;
+            if (hit.material && hit.material.color) {
+              hit.material.color.setRGB(1, 0.2, 0.2);
+              setTimeout(() => old && hit.material.color.copy(old), 120);
+            }
+          }
+        },
+      });
+
+      // Mark anything with this component as “hittable” by our gun
+      AFRAME.registerComponent("hittable", {
+        init() {
+          if (this.el.object3D) {
+            this.el.object3D.userData.hittable = true;
+          }
+        },
+      });
+
+      // --- Player Recorder System ---
+      // Attach to the rig to record position/rotation each frame
+      AFRAME.registerComponent("record-player", {
+        tick: function () {
+          if (!window.playerActionRecorder.isRecording) return;
+          const rig = this.el;
+          const pos = rig.object3D.position;
+          const rot = rig.object3D.rotation;
+          window.playerActionRecorder.recordFrame(pos, rot);
+        },
+      });
+      // --- Round Manager ---
+      // Handles round reset and ghost replay
+      AFRAME.registerComponent('round-manager', {
+        init: function () {
+          this.enemies = Array.from(document.querySelectorAll('[hittable]'));
+          this.rig = document.querySelector('#rig');
+          this.startPos = new THREE.Vector3(0, 0, 0);
+          this.startRot = new THREE.Euler(0, 0, 0);
+          this.ghostRecording = null;
+          window.playerActionRecorder.start();
+        },
+        tick: function () {
+          // Check if all enemies are gone (for now: if all are invisible)
+          const allDead = this.enemies.every(e => !e.getAttribute('visible') || e.getAttribute('visible') === false);
+          if (allDead && window.playerActionRecorder.isRecording) {
+            // End round, reset player, save recording
+            window.playerActionRecorder.stop();
+            this.ghostRecording = window.playerActionRecorder.getRecording();
+            this.resetPlayer();
+            this.spawnEnemies();
+            this.spawnGhost();
+            window.playerActionRecorder.start();
+          }
+        },
+        resetPlayer: function () {
+          // Move player rig to start
+          this.rig.setAttribute('position', '0 0 0');
+          this.rig.setAttribute('rotation', '0 0 0');
+        },
+        spawnEnemies: function () {
+          // Respawn enemies (make visible)
+          this.enemies.forEach(e => e.setAttribute('visible', true));
+        },
+        spawnGhost: function () {
+          if (!this.ghostRecording || !this.ghostRecording.length) return;
+          // Remove previous ghost if any
+          const oldGhost = document.querySelector('#ghostRig');
+          if (oldGhost) oldGhost.parentNode.removeChild(oldGhost);
+          // Create ghost rig
+          const ghost = document.createElement('a-entity');
+          ghost.setAttribute('id', 'ghostRig');
+          ghost.setAttribute('ghost-replay', '');
+          this.rig.parentNode.appendChild(ghost);
+        }
+      });
+
+      // --- Ghost Replay Component ---
+      // Replays the previous round's actions
+      AFRAME.registerComponent('ghost-replay', {
+        init: function () {
+          this.recording = window.playerActionRecorder.recording.slice();
+          this.frameIdx = 0;
+          this.lastTime = null;
+          // Add ghost gun visuals
+          const gun = document.createElement('a-box');
+          gun.setAttribute('position', '0 -0.02 -0.08');
+          gun.setAttribute('depth', '0.24');
+          gun.setAttribute('height', '0.06');
+          gun.setAttribute('width', '0.06');
+          gun.setAttribute('color', '#444');
+          this.el.appendChild(gun);
+        },
+        tick: function (time, dt) {
+          if (!this.recording || this.frameIdx >= this.recording.length) return;
+          const frame = this.recording[this.frameIdx];
+          this.el.setAttribute('position', `${frame.pos.x} ${frame.pos.y} ${frame.pos.z}`);
+          this.el.setAttribute('rotation', `${THREE.Math.radToDeg(frame.rot.x)} ${THREE.Math.radToDeg(frame.rot.y)} ${THREE.Math.radToDeg(frame.rot.z)}`);
+          // Fire shots if any in this frame
+          if (frame.shots && frame.shots.length) {
+            frame.shots.forEach(() => this.fireGhostShot());
+          }
+          this.frameIdx++;
+        },
+        fireGhostShot: function () {
+          // Visualize ghost tracer
+          const muzzle = this.el.object3D;
+          const origin = new THREE.Vector3();
+          const direction = new THREE.Vector3(0, 0, -1);
+          muzzle.getWorldPosition(origin);
+          muzzle.getWorldDirection(direction);
+          const tracerLen = 30;
+          const end = origin.clone().add(direction.clone().multiplyScalar(tracerLen));
+          const line = document.createElement('a-entity');
+          line.setAttribute('line', `start: ${origin.x} ${origin.y} ${origin.z}; end: ${end.x} ${end.y} ${end.z}; opacity: 0.5`);
+          line.setAttribute('material', 'shader: line; linewidth: 2');
+          this.el.sceneEl.appendChild(line);
+          setTimeout(() => line.remove(), 60);
+        }
+      });
+    </script>
+  </body>
+</html>
