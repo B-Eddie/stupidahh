@@ -53,47 +53,51 @@
     },
 
     createPerimeterWalls(size) {
-      const halfSize = size / 2;
-      const wallHeight = 4;
-      const wallThickness = 0.8;
-      
-      // North wall (with gaps)
-      this.createWallSegment(-halfSize, halfSize, halfSize, wallThickness, wallHeight, 0);
-      this.createWallSegment(-halfSize, halfSize, halfSize, wallThickness, wallHeight, 1);
-      
-      // South wall (with gaps)
-      this.createWallSegment(-halfSize, -halfSize, -halfSize, wallThickness, wallHeight, 0);
-      this.createWallSegment(-halfSize, -halfSize, -halfSize, wallThickness, wallHeight, 1);
-      
-      // East wall (with gaps)
-      this.createWallSegment(halfSize, -halfSize, halfSize, wallThickness, wallHeight, 0);
-      this.createWallSegment(halfSize, -halfSize, halfSize, wallThickness, wallHeight, 1);
-      
-      // West wall (with gaps)
-      this.createWallSegment(-halfSize, -halfSize, -halfSize, wallThickness, wallHeight, 0);
-      this.createWallSegment(-halfSize, -halfSize, -halfSize, wallThickness, wallHeight, 1);
-    },
+      const half = size / 2;
+      const height = 4;
+      const thickness = 0.8;
+      const gap = 10; // central opening width per side
 
-    createWallSegment(x, z, length, thickness, height, gapIndex) {
-      const wall = document.createElement("a-entity");
-      const gapSize = 8; // Size of gaps in walls
-      const segmentLength = (length - gapSize) / 2;
-      
-      let posX = x;
-      let posZ = z;
-      let wallLength = segmentLength;
-      
-      if (gapIndex === 1) {
-        // Second segment after gap
-        posX += gapSize;
-        posZ += gapSize;
+      // Helper to spawn two wall segments with a centered gap along an axis
+      const makeSide = (axis, constantVal, alongLength, isHorizontal) => {
+        // alongLength is total width available (size)
+        const seg = (alongLength - gap) / 2;
+        // First segment
+        const wallA = document.createElement('a-entity');
+        const wallB = document.createElement('a-entity');
+        if (isHorizontal) {
+          wallA.setAttribute('geometry', `primitive: box; width:${seg}; height:${height}; depth:${thickness}`);
+          wallA.setAttribute('position', `${-half + seg/2} ${height/2} ${constantVal}`);
+          wallB.setAttribute('geometry', `primitive: box; width:${seg}; height:${height}; depth:${thickness}`);
+          wallB.setAttribute('position', `${half - seg/2} ${height/2} ${constantVal}`);
+        } else {
+          wallA.setAttribute('geometry', `primitive: box; width:${thickness}; height:${height}; depth:${seg}`);
+          wallA.setAttribute('position', `${constantVal} ${height/2} ${-half + seg/2}`);
+          wallB.setAttribute('geometry', `primitive: box; width:${thickness}; height:${height}; depth:${seg}`);
+          wallB.setAttribute('position', `${constantVal} ${height/2} ${half - seg/2}`);
+        }
+        [wallA, wallB].forEach(w => {
+          w.setAttribute('material', 'color:#3a3a3a; roughness:0.8; metalness:0.1; emissive:#1a1a1a; emissiveIntensity:0.1');
+          w.classList.add('solid');
+          this.el.appendChild(w);
+        });
+      };
+
+      // North (positive Z) & South (negative Z) horizontal walls
+      makeSide('z', half, size, true);   // North
+      makeSide('z', -half, size, true);  // South
+      // East (positive X) & West (negative X) vertical walls
+      makeSide('x', half, size, false);  // East
+      makeSide('x', -half, size, false); // West
+
+      // Ensure player (rig) not spawning outside or embedded: reposition center if outside
+      const rig = document.querySelector('#rig');
+      if (rig) {
+        const p = rig.object3D.position;
+        if (Math.abs(p.x) > half - 2 || Math.abs(p.z) > half - 2) {
+          p.set(0, p.y, 0); // keep current Y (e.g., 0), center X/Z
+        }
       }
-      
-      wall.setAttribute("geometry", `primitive: box; width:${wallLength}; height:${height}; depth:${thickness}`);
-      wall.setAttribute("position", `${posX} ${height/2} ${posZ}`);
-      wall.setAttribute("material", "color:#3a3a3a; roughness:0.8; metalness:0.1; emissive:#1a1a1a; emissiveIntensity:0.1");
-  wall.classList.add("solid");
-  this.el.appendChild(wall);
     },
 
     createCentralStructures() {
