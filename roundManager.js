@@ -2,7 +2,7 @@
 aframeReady(() => {
   AFRAME.registerComponent("round-manager", {
     schema: {
-      spawnBoxes: { type: 'boolean', default: true }
+      spawnBoxes: { type: "boolean", default: true },
     },
     init() {
       this.enemies = [];
