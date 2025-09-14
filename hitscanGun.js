@@ -1,6 +1,12 @@
 // hitscanGun.js
 aframeReady(() => {
   AFRAME.registerComponent("hitscan-gun", {
+    schema: {
+      forwardAxis: { type: "string", default: "-z" }, // which local axis is barrel forward: -z (default A-Frame), -y (some hand models), +z, +x, -x, +y
+      useCameraForwardInAR: { type: "boolean", default: true }, // override to camera forward if AR mode detected
+      debug: { type: "boolean", default: false }, // draw a persistent debug ray
+      tracerLength: { type: "number", default: 30 },
+    },
     init() {
       const el = this.el;
       // Listen to controller button events
@@ -10,17 +16,108 @@ aframeReady(() => {
         if (AFRAME.scenes[0].is("vr-mode")) return; // ignore in VR
         if (e.button === 0) this.fire();
       });
+      if (this.data.debug) this.spawnDebugRay();
+    },
+    update(oldData) {
+      if (this.data.debug && !oldData.debug) this.spawnDebugRay();
+      if (!this.data.debug && oldData.debug && this.debugEntity) {
+        this.debugEntity.remove();
+        this.debugEntity = null;
+      }
+    },
+    spawnDebugRay() {
+      if (this.debugEntity) return;
+      const dbg = document.createElement("a-entity");
+      dbg.setAttribute(
+        "geometry",
+        `primitive: cylinder; radius: 0.005; height: ${this.data.tracerLength}`
+      );
+      dbg.setAttribute(
+        "material",
+        "color: #00ffaa; opacity: 0.4; transparent: true; emissive: #00ffaa"
+      );
+      dbg.classList.add("hitscan-debug");
+      this.el.appendChild(dbg);
+      this.debugEntity = dbg;
+    },
+    computeDirection() {
+      const direction = new THREE.Vector3();
+      // If AR and flag set, use camera forward (flat) to feel like phone reticle or head gaze
+      const scene = this.el.sceneEl;
+      const isAR = scene && scene.is && scene.is("ar-mode");
+      if (isAR && this.data.useCameraForwardInAR && scene.camera) {
+        scene.camera.getWorldDirection(direction);
+        return direction.normalize();
+      }
+      // Otherwise use configured local axis of gun entity
+      const obj = this.el.object3D;
+      switch (this.data.forwardAxis) {
+        case "+z":
+          direction.set(0, 0, 1);
+          break;
+        case "-z":
+          direction.set(0, 0, -1);
+          break;
+        case "+x":
+          direction.set(1, 0, 0);
+          break;
+        case "-x":
+          direction.set(-1, 0, 0);
+          break;
+        case "+y":
+          direction.set(0, 1, 0);
+          break;
+        case "-y":
+          direction.set(0, -1, 0);
+          break;
+        default:
+          direction.set(0, 0, -1);
+          break;
+      }
+      obj.getWorldDirection(direction); // start with -Z forward; adjust if custom axis differs
+      // If custom axis not -Z, transform manually from local space
+      if (this.data.forwardAxis !== "-z") {
+        const basis = new THREE.Vector3();
+        // Build local axis vector
+        switch (this.data.forwardAxis) {
+          case "+z":
+            basis.set(0, 0, 1);
+            break;
+          case "+x":
+            basis.set(1, 0, 0);
+            break;
+          case "-x":
+            basis.set(-1, 0, 0);
+            break;
+          case "+y":
+            basis.set(0, 1, 0);
+            break;
+          case "-y":
+            basis.set(0, -1, 0);
+            break;
+          default:
+            basis.set(0, 0, -1);
+            break;
+        }
+        // Apply entity world rotation to basis
+        basis
+          .applyQuaternion(
+            this.el.object3D.getWorldQuaternion(new THREE.Quaternion())
+          )
+          .normalize();
+        direction.copy(basis);
+      }
+      return direction.normalize();
     },
     fire() {
       const muzzle = this.el.object3D;
       // Build a ray from the gun's forward direction
       const origin = new THREE.Vector3();
-      const direction = new THREE.Vector3(0, 0, -1);
+      const direction = this.computeDirection();
       muzzle.getWorldPosition(origin);
-      muzzle.getWorldDirection(direction);
 
       // Visualize a brief tracer (avoid deprecated/unknown 'line' shader)
-      const tracerLen = 30; // meters
+      const tracerLen = this.data.tracerLength; // meters
       const end = origin
         .clone()
         .add(direction.clone().multiplyScalar(tracerLen));
@@ -62,7 +159,12 @@ aframeReady(() => {
       setTimeout(() => tracer.remove(), 60);
 
       // Do a raycast to detect hits (e.g., enemies)
-      const raycaster = new THREE.Raycaster(origin, direction, 0, tracerLen);
+      const raycaster = new THREE.Raycaster(
+        origin,
+        direction.clone(),
+        0,
+        tracerLen
+      );
       const meshes = [];
       this.el.sceneEl.object3D.traverse((obj) => {
         if (obj.userData && obj.userData.hittable) meshes.push(obj);
@@ -87,6 +189,25 @@ aframeReady(() => {
         position: origin.clone(),
         direction: direction.clone(),
       });
+      if (this.debugEntity) {
+        // Reposition debug ray
+        const dbgObj = this.debugEntity.object3D;
+        dbgObj.position.set(0, 0, 0);
+        // Align cylinder whose up axis is Y to our direction
+        const up = new THREE.Vector3(0, 1, 0);
+        const quat = new THREE.Quaternion().setFromUnitVectors(
+          up,
+          direction.clone().normalize()
+        );
+        dbgObj.setRotationFromQuaternion(quat);
+        dbgObj.position.copy(
+          direction.clone().multiplyScalar(this.data.tracerLength / 2)
+        );
+      }
+    },
+    remove() {
+      window.removeEventListener("mousedown", this.fire);
+      if (this.debugEntity) this.debugEntity.remove();
     },
   });
 });

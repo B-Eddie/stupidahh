@@ -24,20 +24,31 @@ aframeReady(() => {
     startRound() {
       this.killed = 0;
       this.enemies = [];
-      // Spawn enemies
-      for (let i = 0; i < 3; i++) {
+      // Collect spawn points (dynamic difficulty grows with round)
+      const spawns = Array.from(
+        this.el.sceneEl.querySelectorAll(".enemy-spawn")
+      );
+      const baseCount = 3;
+      const addPerRound = 2;
+      const toSpawn = baseCount + (this.round - 1) * addPerRound;
+      for (let i = 0; i < toSpawn; i++) {
         const enemy = document.createElement("a-entity");
-        enemy.setAttribute(
-          "position",
-          `${Math.random() * 10 - 5} 1 ${Math.random() * 10 - 5}`
-        );
+        const pos = spawns.length
+          ? spawns[i % spawns.length].getAttribute("position")
+          : { x: Math.random() * 10 - 5, y: 1, z: Math.random() * 10 - 5 };
+        enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
         enemy.setAttribute(
           "geometry",
-          "primitive: box; width: 1; height: 2; depth: 1"
+          "primitive: box; width:0.35; height:0.6; depth:0.35"
         );
-        enemy.setAttribute("material", "color", "green");
+        enemy.setAttribute(
+          "material",
+          "color:#5a5a5a; emissive:#121212; roughness:0.85"
+        );
         enemy.setAttribute("hittable", "");
         enemy.setAttribute("enemy", "");
+        enemy.setAttribute("enemy-mover", "");
+        enemy.setAttribute("enemy-laser", "");
         this.el.sceneEl.appendChild(enemy);
         this.enemies.push(enemy);
       }
@@ -73,7 +84,9 @@ aframeReady(() => {
 
       // Next round after some time
       setTimeout(() => {
+        this.round++;
         this.startRound();
+        this.el.sceneEl.emit("roundrestart", { round: this.round });
       }, 10000); // 10 seconds replay
     },
     playerHit() {
