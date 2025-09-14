@@ -308,6 +308,14 @@
       perRoundBase: { type: "int", default: 3 },
       perRoundAdd: { type: "int", default: 2 },
       scale: { type: "number", default: 0.35 },
+      // New variation ranges (if scaleMin/Max provided they override single scale for randomness)
+      scaleMin: { type: 'number', default: 0.25 },
+      scaleMax: { type: 'number', default: 0.55 },
+      speedMin: { type: 'number', default: 0.55 },
+      speedMax: { type: 'number', default: 1.2 },
+      laserRateMin: { type: 'number', default: 1100 },
+      laserRateMax: { type: 'number', default: 1900 },
+      sizeSpeedLink: { type: 'boolean', default: true }, // if true smaller = faster automatically
       activationRadius: { type: "number", default: 8 },
       randomGround: { type: "int", default: 4 },
       minDistanceFromPlayer: { type: "number", default: 6 },
@@ -327,6 +335,40 @@
         });
       }
       this.spawnBatch();
+    },
+    _rand01() { return Math.random(); },
+    _randRange(a,b){ return a + (b-a)*Math.random(); },
+    _pickScale(){
+      const { scaleMin, scaleMax, scale } = this.data;
+      if (scaleMin && scaleMax) return this._randRange(scaleMin, scaleMax);
+      return scale;
+    },
+    _pickSpeed(size){
+      const { speedMin, speedMax, sizeSpeedLink } = this.data;
+      let base = this._randRange(speedMin, speedMax);
+      if (sizeSpeedLink) {
+        // Map size into [0,1] in its range and invert influence (smaller -> faster)
+        const s0 = this.data.scaleMin, s1 = this.data.scaleMax;
+        if (s0 < s1) {
+          const t = (size - s0)/(s1 - s0);
+          const inv = 1 - t; // smaller size => higher inv
+          base = speedMin + (speedMax - speedMin) * (0.4 + inv*0.6); // bias a bit toward faster small
+        }
+      }
+      return base;
+    },
+    _pickLaserRate(size){
+      const { laserRateMin, laserRateMax, sizeSpeedLink } = this.data;
+      if (!laserRateMin || !laserRateMax) return 1500;
+      if (sizeSpeedLink) {
+        const s0 = this.data.scaleMin, s1 = this.data.scaleMax;
+        if (s0 < s1) {
+          const t = (size - s0)/(s1 - s0); // larger size -> closer to 1
+          const inv = 1 - t; // smaller -> larger inv
+          return Math.round(laserRateMin + (laserRateMax - laserRateMin) * (0.3 + inv*0.7));
+        }
+      }
+      return Math.round(this._randRange(laserRateMin, laserRateMax));
     },
     _farEnough(x, z) {
       if (!this.player) return true;
@@ -392,6 +434,7 @@
           return p.z >= this.data.spawnForwardMinZ;
         });
       }
+      const created = [];
       for (let i = 0; i < count; i++) {
         const enemy = document.createElement("a-entity");
         let basePos;
@@ -406,7 +449,7 @@
         }
         const pos = this._ensureFar(this._placeNear(basePos));
         enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
-        const s = this.data.scale;
+        const s = this._pickScale();
         enemy.setAttribute("scale", `${s} ${s} ${s}`);
         if (this.data.usePrimitive) {
           this._buildPrimitiveGoose(enemy);
@@ -414,14 +457,14 @@
           enemy.setAttribute("gltf-model", "assets/goose.glb");
           enemy.setAttribute("goose-anim", "");
         }
-        enemy.setAttribute(
-          "enemy-mover",
-          `activationRadius:${this.data.activationRadius}`
-        );
-        enemy.setAttribute(
-          "enemy-laser",
-          `activationRadius:${this.data.activationRadius}`
-        );
+        const mvSpeed = this._pickSpeed(s).toFixed(3);
+        const laserRate = this._pickLaserRate(s);
+        // Apply movement speed variation + activation radius
+        enemy.setAttribute('enemy-mover', `activationRadius:${this.data.activationRadius}; speed:${mvSpeed}`);
+        // Laser rate varied by size (smaller may fire a bit faster)
+        enemy.setAttribute('enemy-laser', `activationRadius:${this.data.activationRadius}; rate:${laserRate}`);
+        // Add melee bite capability
+        enemy.setAttribute('goose-bite', '');
         if (!this.data.usePrimitive) {
           enemy.addEventListener("model-loaded", (e) => {
             console.log("[goose] model loaded", e.detail);
@@ -436,12 +479,13 @@
           });
         }
         this.scene.appendChild(enemy);
+        created.push(enemy);
       }
       for (let g = 0; g < this.data.randomGround; g++) {
         const enemy = document.createElement("a-entity");
         const pos = this._placeGround();
         enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
-        const s = this.data.scale;
+        const s = this._pickScale();
         enemy.setAttribute("scale", `${s} ${s} ${s}`);
         if (this.data.usePrimitive) {
           this._buildPrimitiveGoose(enemy);
@@ -449,14 +493,11 @@
           enemy.setAttribute("gltf-model", "assets/goose.glb");
           enemy.setAttribute("goose-anim", "");
         }
-        enemy.setAttribute(
-          "enemy-mover",
-          `activationRadius:${this.data.activationRadius}`
-        );
-        enemy.setAttribute(
-          "enemy-laser",
-          `activationRadius:${this.data.activationRadius}`
-        );
+        const mvSpeed = this._pickSpeed(s).toFixed(3);
+        const laserRate = this._pickLaserRate(s);
+        enemy.setAttribute('enemy-mover', `activationRadius:${this.data.activationRadius}; speed:${mvSpeed}`);
+        enemy.setAttribute('enemy-laser', `activationRadius:${this.data.activationRadius}; rate:${laserRate}`);
+        enemy.setAttribute('goose-bite', '');
         if (!this.data.usePrimitive) {
           enemy.addEventListener("model-loaded", (e) => {
             console.log("[goose] model loaded", e.detail);
@@ -471,6 +512,11 @@
           });
         }
         this.scene.appendChild(enemy);
+        created.push(enemy);
+      }
+      // Emit event with newly created geese for timeline system
+      if (created.length) {
+        this.scene.emit('geeseSpawned', { geese: created });
       }
     },
     _buildPrimitiveGoose(root) {
