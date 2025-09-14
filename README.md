@@ -1,84 +1,96 @@
-# Web VR Shooter Prototype
+# 🪿 Pew Pew — Goose Revenge VR
 
-## A-Frame Loading Strategy
+A chaotic VR FPS where you dodge poop, blast geese, and survive their savage roasts — built entirely by high school students who have stepped in goose poop one too many times.  
 
-Dynamic loader in `index.html` tries multiple CDNs:
+Play it here: [stupidahh.vercel.app](https://stupidahh.vercel.app)
 
-1. unpkg
-2. jsDelivr
-3. cdnjs
+---
 
-If all fail, you must host A-Frame locally.
+## 🎮 Gameplay
+- 🟤 Dodge piles of goose poop scattered around the map  
+- 💥 Shoot geese before they charge you, honking and hurling insults  
+- 🎙 Listen as geese roast you with proximity voice lines  
+- 📈 Rack up points and survive endless waves of angry waterfowl  
 
-### Host Locally
+**Warning:** Do NOT step on goose poop in real life. It’s not worth it. Trust us.
 
-Download and place in `vendor/` (create folder):
+---
 
+## 🧠 Inspiration
+We’ve all heard the tales of Waterloo students getting terrorized by geese…  
+but we didn’t need to hear the stories to know the pain.  
+
+After enough near–back-breaking slips, we decided it was time to fight back.  
+**Pew Pew** was born from pure vengeance… and the faint smell of regret on our sneakers.
+
+---
+
+## ⚙️ Tech Stack
+- **A-Frame (WebXR)** — VR framework (running in-browser)
+- **Blender** — cursed goose modeling
+- **ElevenLabs** — goose insult voice lines
+- **JavaScript / HTML / CSS** — core game logic, visuals, and UI
+- **Vercel** — deployment
+
+Originally started in **Unity**, but pivoted to **A-Frame** for faster iteration during the hackathon.
+
+---
+
+## 🧩 Features
+- Dynamic goose AI that waddles menacingly  
+- Proximity-based roast voice lines from geese  
+- Poop landmine collisions and splatter effects  
+- Ghost replay system for recording and dodging your past self  
+- Tactical minimap + enemy markers
+
+---
+
+## 🚀 Running Locally
+Clone the repo:
+```bash
+git clone https://github.com/B-Eddie/stupidahh.git
+cd stupidahh
 ```
+
+Install local A-Frame fallback (optional but recommended):
+```bash
+mkdir -p vendor
 curl -L https://aframe.io/releases/1.5.0/aframe.min.js -o vendor/aframe.min.js
 curl -L https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js -o vendor/aframe-extras.min.js
 ```
 
-Then (edit near the loader) short-circuit with:
+Then open `index.html` in a browser (or use Live Server / Vercel).  
+If A-Frame fails to load from CDN, it will fall back to the local `vendor` versions.
 
-```
-if (!navigator.onLine) { /* inject local script tags before loadNext() */ }
-```
+---
 
-Or simply replace dynamic logic with static:
-
-```
-<script src="vendor/aframe.min.js"></script>
-<script src="vendor/aframe-extras.min.js"></script>
-```
-
-## Fallback Locomotion
-
-If `aframe-extras` fails, a `basic-locomotion` component is registered automatically. Attach it to an entity (e.g., the rig):
-
-```
-<a-entity id="rig" basic-locomotion></a-entity>
-```
-
-Controls: WASD relative to camera facing.
-
-## Next Steps
-
-- Implement enemy spawning + mark hittable
-- Record player transform & shot events each frame (timestamped)
-- Replay ghost by interpolating stored frames & reproducing shots
-- Distinguish ghost shots (color) so player dodges them
-
-## Debug Tips
-
-Open console:
-
-```
+## ⚠️ Troubleshooting
+- Open DevTools console and run:
+```js
 AFRAME && AFRAME.version
 ```
+If `undefined`, your network/CSP may be blocking the scripts.  
+- Try switching to A-Frame 1.4.2 if 1.5.0 fails.
+- Test `minimal-test.html` to confirm A-Frame loads correctly.
 
-If undefined after a few seconds, network/CSP blocked.
+---
 
-## Troubleshooting Renderer Error
+## 🧪 Known Bugs
+- Goose physics occasionally launch them into the stratosphere (feature, not a bug)
+- Poop collision sounds sometimes overlap infinitely
+- Tactical map icons may flicker if you stare too hard at them
 
-If you see errors like `Cannot set properties of undefined (setting 'useLegacyLights')`:
+---
 
-1. Verify file integrity:
+## 🧑‍💻 Team
+- Eddie (@B-Eddie)  
+- Eric (@eric-feng14)  
+- Darren (@stony-su)  
+- Arnnav (@blazecoding2009)
 
-```
-shasum -a 256 vendor/aframe.min.js
-```
+Built at HackTheNorth 2025 in a sleep-deprived haze fueled by vengeance, Red Bull, and the haunting memory of stepping in something warm.
 
-(Compare against official download.) 2. Try a different A-Frame version (e.g. 1.4.2):
+---
 
-```
-curl -L https://aframe.io/releases/1.4.2/aframe.min.js -o vendor/aframe.min.js
-```
-
-3. Test `minimal-test.html`. If that fails the file is corrupt or environment blocks execution.
-4. Disable custom components temporarily (comment out their script tags) to rule out side effects.
-5. Remove `renderer` attribute in `<a-scene>` to let defaults apply; reintroduce gradually.
-
-## License
-
-Internal prototype.
+## 📜 License
+Internal prototype. Please don’t actually shoot real geese. (They will win.)
