@@ -106,7 +106,7 @@ aframeReady(() => {
       const spawnMgr = this.el.sceneEl.querySelector("#mapRoot");
       if (spawnMgr && spawnMgr.components["goose-spawn-manager"]) {
         // Simple approach: remove existing geese then call spawnAll again.
-        const geese = this.el.sceneEl.querySelectorAll('[data-goose-id]');
+        const geese = this.el.sceneEl.querySelectorAll("[data-goose-id]");
         geese.forEach((g) => g.remove());
         spawnMgr.components["goose-spawn-manager"].spawnAll();
       }
@@ -193,28 +193,36 @@ aframeReady(() => {
     },
     _roundCue() {
       console.log(`[round-manager] Starting Round ${this.round}`);
-      const hud = document.querySelector('.hud');
+      const hud = document.querySelector(".hud");
       if (hud) {
         const oldBg = hud.style.background;
-        hud.style.transition = 'background 0.25s';
-        hud.style.background = 'rgba(255,80,80,0.15)';
-        setTimeout(()=> hud.style.background = oldBg, 400);
+        hud.style.transition = "background 0.25s";
+        hud.style.background = "rgba(255,80,80,0.15)";
+        setTimeout(() => (hud.style.background = oldBg), 400);
       }
     },
     _restartGame() {
-      if (this.uiWin) this.uiWin.style.display = 'none';
-      const btn = document.getElementById('restartBtn');
-      if (btn) btn.style.display = 'none';
-      const title = document.getElementById('winTitle');
-      if (title) { title.textContent = 'YOU WIN'; title.style.color = '#3eff8c'; }
-      const timeEl = document.getElementById('winTime');
-      if (timeEl) timeEl.textContent = '';
+      if (this.uiWin) this.uiWin.style.display = "none";
+      const btn = document.getElementById("restartBtn");
+      if (btn) btn.style.display = "none";
+      const title = document.getElementById("winTitle");
+      if (title) {
+        title.textContent = "YOU WIN";
+        title.style.color = "#3eff8c";
+      }
+      const timeEl = document.getElementById("winTime");
+      if (timeEl) timeEl.textContent = "";
       // Remove ghost & shot replay entities
-      if (this.ghostReplayEl) { this.ghostReplayEl.remove(); this.ghostReplayEl = null; }
-      const shotReplay = this.el.sceneEl.querySelector('[enemy-shot-replay]');
+      if (this.ghostReplayEl) {
+        this.ghostReplayEl.remove();
+        this.ghostReplayEl = null;
+      }
+      const shotReplay = this.el.sceneEl.querySelector("[enemy-shot-replay]");
       if (shotReplay) shotReplay.remove();
       // Remove existing geese
-      this.el.sceneEl.querySelectorAll('[data-goose-id]').forEach(g=>g.remove());
+      this.el.sceneEl
+        .querySelectorAll("[data-goose-id]")
+        .forEach((g) => g.remove());
       // Reset core state
       this.round = 1;
       this.totalStartTime = performance.now();
@@ -225,9 +233,9 @@ aframeReady(() => {
       this.killed = 0;
       // Respawn geese and restart round flow
       this._respawnGeese();
-      const rig = this.el.sceneEl.querySelector('#rig');
-      if (rig) rig.object3D.position.set(0,0,0);
+      const rig = this.el.sceneEl.querySelector("#rig");
+      if (rig) rig.object3D.position.set(0, 0, 0);
       this.startRound();
-    }
+    },
   });
 });

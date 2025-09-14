@@ -34,8 +34,8 @@
       this.prevPos = new V3();
       this.prevY = 0;
       this.velY = 0; // vertical velocity
-  this.rayDown = new THREE.Raycaster();
-  this.downDir = new THREE.Vector3(0, -1, 0);
+      this.rayDown = new THREE.Raycaster();
+      this.downDir = new THREE.Vector3(0, -1, 0);
       // Prevent enormous first-frame horizontal delta causing false step / slide.
       // Capture starting position after entity is in scene graph.
       const setInitialPrev = () => {
@@ -46,7 +46,9 @@
       if (this.el.sceneEl.hasLoaded) {
         setInitialPrev();
       } else {
-        this.el.sceneEl.addEventListener("loaded", setInitialPrev, { once: true });
+        this.el.sceneEl.addEventListener("loaded", setInitialPrev, {
+          once: true,
+        });
       }
       this._rebuild();
       setTimeout(() => this._rebuild(), 600);
