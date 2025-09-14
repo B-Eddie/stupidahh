@@ -9,7 +9,7 @@ aframeReady(() => {
   // Jump state
   this.isJumping = false;
   this.jumpCooldown = false;
-  this.jumpHeight = 1.2; // meters
+  this.jumpHeight = 2.2; // meters
   this.jumpDuration = 400; // ms
   this.groundY = null;
 
@@ -33,13 +33,24 @@ aframeReady(() => {
         }
       });
 
-      // VR controller jump (primary button on right hand)
+      // VR controller jump (A or B button on right hand). Some libs emit generic
+      // controllerbuttondown with detail {hand, button}, others emit specific
+      // events like 'abuttondown' / 'bbuttondown'. Support both.
       this.el.sceneEl.addEventListener("controllerbuttondown", (evt) => {
-        // evt.detail = {hand, button}
-        if (evt.detail && evt.detail.hand === "right" && evt.detail.button === "a") {
+        // evt.detail expected: { hand: 'right'|'left', button: 'a'|'b'|... }
+        if (!evt.detail) return;
+        const { hand, button } = evt.detail;
+        // Treat A, B, primary, secondary as jump buttons on right controller
+        if (hand === "right" && ["a", "b", "primary", "secondary"].includes(button)) {
           this.triggerJump();
         }
       });
+
+      // Fallback for explicit button events (A-Frame emits these for oculus-touch-controls)
+      this.el.addEventListener("abuttondown", () => this.triggerJump());
+      this.el.addEventListener("bbuttondown", () => this.triggerJump());
+      // Optional: uncomment for debugging which buttons are firing
+      // this.el.sceneEl.addEventListener('controllerbuttondown', e => console.log('controllerbuttondown', e.detail));
     },
     tick() {
       const now = performance.now();

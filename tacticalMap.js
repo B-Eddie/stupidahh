@@ -48,7 +48,8 @@
       floor.setAttribute("geometry", `primitive: box; width:${size}; height:0.2; depth:${size}`);
       floor.setAttribute("position", "0 -0.1 0");
       floor.setAttribute("grid-material", "cellSize:2; lineThickness:0.12; bgColor:#2a2a2a; lineColor:#444444; roughness:0.9; metalness:0.1");
-      this.el.appendChild(floor);
+  floor.classList.add("solid");
+  this.el.appendChild(floor);
     },
 
     createPerimeterWalls(size) {
@@ -91,7 +92,8 @@
       wall.setAttribute("geometry", `primitive: box; width:${wallLength}; height:${height}; depth:${thickness}`);
       wall.setAttribute("position", `${posX} ${height/2} ${posZ}`);
       wall.setAttribute("material", "color:#3a3a3a; roughness:0.8; metalness:0.1; emissive:#1a1a1a; emissiveIntensity:0.1");
-      this.el.appendChild(wall);
+  wall.classList.add("solid");
+  this.el.appendChild(wall);
     },
 
     createCentralStructures() {
@@ -100,7 +102,8 @@
       command.setAttribute("geometry", "primitive: box; width:12; height:0.4; depth:12");
       command.setAttribute("position", "0 2 0");
       command.setAttribute("grid-material", "cellSize:1.5; lineThickness:0.15; bgColor:#4a4a4a; lineColor:#666666; roughness:0.85; metalness:0.15");
-      this.el.appendChild(command);
+  command.classList.add("solid");
+  this.el.appendChild(command);
 
       // Ramps to central platform
       this.createRamp(-6, 0, 0, 4, 2, 0.3, 0); // West ramp
@@ -113,7 +116,8 @@
       pillar.setAttribute("geometry", "primitive: cylinder; radius:1.5; height:6");
       pillar.setAttribute("position", "0 3 0");
       pillar.setAttribute("material", "color:#2a2a2a; roughness:0.9; metalness:0.05");
-      this.el.appendChild(pillar);
+  pillar.classList.add("solid");
+  this.el.appendChild(pillar);
     },
 
     createRamp(x, y, z, width, height, depth, rotation) {
@@ -122,7 +126,8 @@
       ramp.setAttribute("position", `${x} ${y + height/2} ${z}`);
       ramp.setAttribute("rotation", `${rotation} 0 0`);
       ramp.setAttribute("grid-material", "cellSize:1; lineThickness:0.1; bgColor:#3a3a3a; lineColor:#555555; roughness:0.8; metalness:0.1");
-      this.el.appendChild(ramp);
+  ramp.classList.add("solid");
+  this.el.appendChild(ramp);
     },
 
     createElevatedPlatforms() {
@@ -143,7 +148,8 @@
         platform.setAttribute("position", `${p.x} ${p.y} ${p.z}`);
         platform.setAttribute("rotation", `0 ${p.rot} 0`);
         platform.setAttribute("grid-material", "cellSize:1.5; lineThickness:0.12; bgColor:#4a4a4a; lineColor:#666666; roughness:0.85; metalness:0.15");
-        this.el.appendChild(platform);
+  platform.classList.add("solid");
+  this.el.appendChild(platform);
 
         // Add ramps to some platforms
         if (index < 4) {
@@ -172,6 +178,7 @@
           box.setAttribute("position", `${crate.x + (Math.random() - 0.5) * 2} ${0.75 + i * 1.5} ${crate.z + (Math.random() - 0.5) * 2}`);
           box.setAttribute("rotation", `0 ${Math.random() * 360} 0`);
           box.setAttribute("material", "color:#8B4513; roughness:0.9; metalness:0.05");
+          box.classList.add("solid");
           this.el.appendChild(box);
         }
       });
@@ -194,7 +201,8 @@
         wall.setAttribute("position", `${barrier.x} ${barrier.h/2} ${barrier.z}`);
         wall.setAttribute("rotation", `0 ${barrier.rot} 0`);
         wall.setAttribute("material", "color:#555555; roughness:0.8; metalness:0.1");
-        this.el.appendChild(wall);
+  wall.classList.add("solid");
+  this.el.appendChild(wall);
       });
     },
 
@@ -213,7 +221,8 @@
         wall.setAttribute("position", `${passage.x} ${passage.h/2} ${passage.z}`);
         wall.setAttribute("rotation", `0 ${passage.rot} 0`);
         wall.setAttribute("material", "color:#666666; roughness:0.7; metalness:0.2; emissive:#333333; emissiveIntensity:0.1");
-        this.el.appendChild(wall);
+  wall.classList.add("solid");
+  this.el.appendChild(wall);
       });
     },
 
