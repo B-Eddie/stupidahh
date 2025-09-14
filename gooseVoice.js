@@ -236,6 +236,90 @@
     }
   });
 
+  // Enhanced goose movement for tactical maps
+  A.registerComponent("tactical-goose-mover", {
+    schema: {
+      speed: { type: "number", default: 0.8 },
+      target: { type: "selector", default: "#rig" },
+      stop: { type: "number", default: 0.6 },
+      activationRadius: { type: "number", default: 8 },
+      tickRate: { type: "number", default: 50 },
+      avoidanceRadius: { type: "number", default: 2.0 },
+      platformAware: { type: "boolean", default: true }
+    },
+
+    init() {
+      this.tmpP = new THREE.Vector3();
+      this.tmpT = new THREE.Vector3();
+      this.tmpAvoid = new THREE.Vector3();
+      this.active = false;
+      this._accum = 0;
+      this.raycaster = new THREE.Raycaster();
+      this.avoidanceTargets = [];
+    },
+
+    tick(t, dt) {
+      if (!this.data.target) return;
+      this._accum += dt;
+      if (this.data.tickRate > 0 && this._accum < this.data.tickRate) return;
+      this._accum = 0;
+
+      const obj = this.el.object3D;
+      obj.getWorldPosition(this.tmpP);
+      this.data.target.object3D.getWorldPosition(this.tmpT);
+      const dir = this.tmpT.clone().sub(this.tmpP);
+      const dist = dir.length();
+
+      if (!this.active && dist <= this.data.activationRadius) {
+        this.active = true;
+      }
+      if (!this.active) return;
+
+      // Basic movement towards player
+      if (dist > this.data.stop) {
+        dir.normalize();
+        
+        // Add avoidance behavior for obstacles
+        if (this.data.platformAware) {
+          this.addAvoidance(dir);
+        }
+        
+        obj.position.addScaledVector(dir, (this.data.speed * (this.data.tickRate || dt)) / 1000);
+      }
+
+      // Face movement direction
+      dir.y = 0;
+      if (dir.lengthSq() > 1e-4) {
+        obj.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
+      }
+    },
+
+    addAvoidance(moveDir) {
+      // Simple obstacle avoidance by checking for nearby walls/platforms
+      const obj = this.el.object3D;
+      const pos = obj.position;
+      
+      // Check for obstacles in movement direction
+      this.raycaster.set(pos, moveDir);
+      const obstacles = this.el.sceneEl.querySelectorAll('a-entity[geometry*="box"]');
+      
+      for (let obstacle of obstacles) {
+        const obstacleMesh = obstacle.getObject3D('mesh');
+        if (obstacleMesh && obstacle !== this.el) {
+          const intersects = this.raycaster.intersectObject(obstacleMesh);
+          if (intersects.length > 0 && intersects[0].distance < this.data.avoidanceRadius) {
+            // Steer away from obstacle
+            const avoidDir = intersects[0].point.clone().sub(pos).normalize();
+            const perpendicular = new THREE.Vector3(-avoidDir.z, 0, avoidDir.x);
+            moveDir.add(perpendicular.multiplyScalar(0.5));
+            moveDir.normalize();
+            break;
+          }
+        }
+      }
+    }
+  });
+
   // Enhanced goose spawn manager to include voice component
   A.registerComponent("goose-spawn-manager-with-voice", {
     schema: {
@@ -371,7 +455,7 @@
       }
 
       // Add movement and combat components
-      enemy.setAttribute("enemy-mover", `activationRadius:${this.data.activationRadius}`);
+      enemy.setAttribute("tactical-goose-mover", `activationRadius:${this.data.activationRadius}; speed:0.8; platformAware:true`);
       enemy.setAttribute("enemy-laser", `activationRadius:${this.data.activationRadius}`);
       enemy.setAttribute("hittable", "");
       enemy.setAttribute("enemy", "");

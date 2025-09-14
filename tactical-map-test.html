@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Tactical Map Test - Goose Chase Arena</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+    <script src="vendor/aframe-extras.min.js"></script>
+</head>
+
+<body style="margin: 0">
+    <div style="position: fixed; top: 10px; left: 10px; color: white; font-family: monospace; z-index: 100; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px; border: 2px solid #3eff8c;">
+        <h3>🦢 Tactical Goose Arena</h3>
+        <p><strong>New Features:</strong></p>
+        <ul style="margin: 5px 0; padding-left: 20px;">
+            <li>Multi-level platforms for vertical gameplay</li>
+            <li>Cover elements (crates, barriers)</li>
+            <li>Chokepoints and narrow passages</li>
+            <li>Strategic spawn points</li>
+            <li>Enhanced lighting system</li>
+        </ul>
+        <p><strong>Controls:</strong> WASD to move, mouse to look</p>
+        <p><strong>Tip:</strong> Use cover and elevated positions to outmaneuver the geese!</p>
+    </div>
+
+    <a-scene
+        renderer="antialias: true; physicallyCorrectLights: true; shadowMapEnabled: true"
+        background="color: #1a1a1a"
+        cursor="rayOrigin: mouse"
+    >
+        <a-assets timeout="15000">
+            <a-asset-item id="gooseModel" src="assets/goose.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Tactical Map -->
+        <a-entity
+            id="mapRoot"
+            tactical-map="size:60; obstacleDensity:0.7; platformCount:8; wallCount:12; coverCount:15"
+            tactical-lighting
+            goose-spawn-manager-with-voice="scale:0.35; voiceEnabled:true; voiceProximityRadius:5.0"
+        ></a-entity>
+
+        <!-- Player -->
+        <a-entity
+            id="rig"
+            movement-controls="fly: false; speed: 0.16"
+        >
+            <a-entity
+                id="camera"
+                camera
+                position="0 1.6 0"
+                look-controls="pointerLockEnabled: true"
+            ></a-entity>
+        </a-entity>
+
+        <!-- Visual indicators for map features -->
+        <a-entity position="0 0.1 0">
+            <a-ring radius-inner="28" radius-outer="30" rotation="-90 0 0" material="color: #3eff8c; opacity: 0.2; transparent: true"></a-ring>
+        </a-entity>
+
+        <!-- Central platform indicator -->
+        <a-entity position="0 2.1 0">
+            <a-ring radius-inner="5" radius-outer="6" rotation="-90 0 0" material="color: #ff6b6b; opacity: 0.3; transparent: true"></a-ring>
+        </a-entity>
+
+        <!-- Corner platform indicators -->
+        <a-entity position="-20 3.1 15">
+            <a-ring radius-inner="3" radius-outer="4" rotation="-90 0 0" material="color: #4ecdc4; opacity: 0.3; transparent: true"></a-ring>
+        </a-entity>
+        <a-entity position="20 3.1 15">
+            <a-ring radius-inner="3" radius-outer="4" rotation="-90 0 0" material="color: #4ecdc4; opacity: 0.3; transparent: true"></a-ring>
+        </a-entity>
+        <a-entity position="-20 3.1 -15">
+            <a-ring radius-inner="3" radius-outer="4" rotation="-90 0 0" material="color: #4ecdc4; opacity: 0.3; transparent: true"></a-ring>
+        </a-entity>
+        <a-entity position="20 3.1 -15">
+            <a-ring radius-inner="3" radius-outer="4" rotation="-90 0 0" material="color: #4ecdc4; opacity: 0.3; transparent: true"></a-ring>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        window.aframeReady = function (cb) {
+            if (window.AFRAME) return cb();
+            const check = () => {
+                if (window.AFRAME) {
+                    cb();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        };
+    </script>
+    <script src="gooseVoice.js" defer></script>
+    <script src="tacticalMap.js" defer></script>
+</body>
+</html>
