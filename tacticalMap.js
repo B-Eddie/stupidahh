@@ -222,26 +222,31 @@
     createSpawnPoints() {
       // Strategic spawn points around the map
       const spawnPoints = [
-        { x: -25, y: 0.5, z: 25 },
-        { x: 25, y: 0.5, z: 25 },
-        { x: -25, y: 0.5, z: -25 },
-        { x: 25, y: 0.5, z: -25 },
+        // Outer corners elevated (was 0.5 when ground existed)
+        { x: -25, y: 3, z: 25 },
+        { x: 25, y: 3, z: 25 },
+        { x: -25, y: 3, z: -25 },
+        { x: 25, y: 3, z: -25 },
+        // Mid elevated platforms already existed ~3-3.5
         { x: -20, y: 3.5, z: 15 },
         { x: 20, y: 3.5, z: 15 },
         { x: -20, y: 3.5, z: -15 },
         { x: 20, y: 3.5, z: -15 },
+        // Side mid-high
         { x: -15, y: 5.5, z: 0 },
         { x: 15, y: 5.5, z: 0 },
+        // High forward/back
         { x: 0, y: 6.5, z: 20 },
         { x: 0, y: 6.5, z: -20 },
-        { x: -12, y: 0.5, z: 8 },
-        { x: 12, y: 0.5, z: 8 },
-        { x: -12, y: 0.5, z: -8 },
-        { x: 12, y: 0.5, z: -8 },
-        { x: -8, y: 0.5, z: 12 },
-        { x: 8, y: 0.5, z: 12 },
-        { x: -8, y: 0.5, z: -12 },
-        { x: 8, y: 0.5, z: -12 }
+        // Former ground-level crates / barriers lifted to 2 (near command platform height)
+        { x: -12, y: 2, z: 8 },
+        { x: 12, y: 2, z: 8 },
+        { x: -12, y: 2, z: -8 },
+        { x: 12, y: 2, z: -8 },
+        { x: -8, y: 2, z: 12 },
+        { x: 8, y: 2, z: 12 },
+        { x: -8, y: 2, z: -12 },
+        { x: 8, y: 2, z: -12 }
       ];
 
       spawnPoints.forEach((spawn, index) => {
