@@ -44,12 +44,8 @@
     },
 
     createFloor(size) {
-      const floor = document.createElement("a-entity");
-      floor.setAttribute("geometry", `primitive: box; width:${size}; height:0.2; depth:${size}`);
-      floor.setAttribute("position", "0 -0.1 0");
-      floor.setAttribute("grid-material", "cellSize:2; lineThickness:0.12; bgColor:#2a2a2a; lineColor:#444444; roughness:0.9; metalness:0.1");
-  floor.classList.add("solid");
-  this.el.appendChild(floor);
+      // Floor intentionally removed per request (open void). Keep method in case other logic calls it.
+      // If needed later, reintroduce a ground plane here.
     },
 
     createPerimeterWalls(size) {
