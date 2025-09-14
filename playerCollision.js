@@ -159,7 +159,7 @@
               // Snap feet to surface without extra upward bump.
               pos.y += overlapBelow; // exact correction (no +epsilon to avoid lift bounce)
               // Let gravity component zero vertical velocity (treat like a step/landing).
-              this.el.emit('player-stepped');
+              this.el.emit("player-stepped");
             }
             // If overlapBelow is large we treat it like a vertical wall; do not modify Y.
           } else if (overlapAbove > 0) {

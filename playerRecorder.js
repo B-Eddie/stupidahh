@@ -6,13 +6,13 @@ aframeReady(() => {
       this.startTime = performance.now();
       this.lastRecordTime = 0;
       this.recordInterval = 100; // ms
-  // Jump state (disabled when gravity component handles vertical motion)
-  this.isJumping = false;
-  this.jumpCooldown = false;
-  this.jumpHeight = 2.2; // meters
-  this.jumpDuration = 400; // ms
-  this.groundY = null;
-  this.gravityDriven = false;
+      // Jump state (disabled when gravity component handles vertical motion)
+      this.isJumping = false;
+      this.jumpCooldown = false;
+      this.jumpHeight = 2.2; // meters
+      this.jumpDuration = 400; // ms
+      this.groundY = null;
+      this.gravityDriven = false;
 
       // Listen to shots from the gun
       const gun = this.el.querySelector("#rightHand");
@@ -45,7 +45,11 @@ aframeReady(() => {
         if (!evt.detail) return;
         const { hand, button } = evt.detail;
         // Treat A, B, primary, secondary as jump buttons on right controller
-        if (!this.gravityDriven && hand === "right" && ["a", "b", "primary", "secondary"].includes(button)) {
+        if (
+          !this.gravityDriven &&
+          hand === "right" &&
+          ["a", "b", "primary", "secondary"].includes(button)
+        ) {
           this.triggerJump();
         }
       });
@@ -88,7 +92,9 @@ aframeReady(() => {
             this.el.object3D.position.y = this.groundY;
           }
           this.isJumping = false;
-          setTimeout(() => { this.jumpCooldown = false; }, 200);
+          setTimeout(() => {
+            this.jumpCooldown = false;
+          }, 200);
         }
       }
     },
@@ -108,8 +114,8 @@ aframeReady(() => {
       this.recordedData = [];
       this.startTime = performance.now();
       this.lastRecordTime = 0;
-  this.isJumping = false;
-  this.jumpCooldown = false;
+      this.isJumping = false;
+      this.jumpCooldown = false;
     },
   });
 });

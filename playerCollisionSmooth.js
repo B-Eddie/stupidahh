@@ -100,10 +100,10 @@
         const penetration = r - dist;
 
         // Predictive step check
-  const rise = box.max.y - pos.y;
-  const descending = verticalVel <= this.data.minDescendSpeed; // clearly falling
-  // Only allow stepping if rise is within stepHeight and we're actually descending, not ascending or nearly stationary upward.
-  const canRise = rise > 0 && rise <= this.data.stepHeight && descending;
+        const rise = box.max.y - pos.y;
+        const descending = verticalVel <= this.data.minDescendSpeed; // clearly falling
+        // Only allow stepping if rise is within stepHeight and we're actually descending, not ascending or nearly stationary upward.
+        const canRise = rise > 0 && rise <= this.data.stepHeight && descending;
         let toward = false;
         if (moveLen > 0.00001) {
           // direction from player to box center
@@ -120,7 +120,8 @@
           }
         }
         // Only allow step when descending (or requirement disabled) to avoid mid-ascent snapping
-        const descendingOk = !this.data.requireDescending || verticalVel <= 0.05;
+        const descendingOk =
+          !this.data.requireDescending || verticalVel <= 0.05;
         if (canRise && toward && descendingOk) {
           const targetY = box.max.y;
           if (targetY > pos.y + 0.0005) {
