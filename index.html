@@ -28,15 +28,18 @@
       ROUND <span id="roundNum">1</span> | HAZARDS <span id="hazCount">0</span>
     </div>
     <a-scene
-      round-manager
+      round-manager="spawnBoxes:false"
       renderer="antialias: true; physicallyCorrectLights: true"
       webxr="optionalFeatures: local-floor, bounded-floor, hand-tracking, layers"
       background="color: #1c1f24"
       cursor="rayOrigin: mouse"
     >
+      <a-assets timeout="15000">
+        <a-asset-item id="gooseModel" src="assets/goose.glb"></a-asset-item>
+      </a-assets>
       <a-entity
         id="mapRoot"
-        matrix-map
+        matrix-map="layout: empty"
         goose-spawn-manager="scale:0.35"
         hazard-damage
       ></a-entity>

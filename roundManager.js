@@ -1,6 +1,9 @@
 // roundManager.js
 aframeReady(() => {
   AFRAME.registerComponent("round-manager", {
+    schema: {
+      spawnBoxes: { type: 'boolean', default: true }
+    },
     init() {
       this.enemies = [];
       this.killed = 0;
@@ -31,26 +34,28 @@ aframeReady(() => {
       const baseCount = 3;
       const addPerRound = 2;
       const toSpawn = baseCount + (this.round - 1) * addPerRound;
-      for (let i = 0; i < toSpawn; i++) {
-        const enemy = document.createElement("a-entity");
-        const pos = spawns.length
-          ? spawns[i % spawns.length].getAttribute("position")
-          : { x: Math.random() * 10 - 5, y: 1, z: Math.random() * 10 - 5 };
-        enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
-        enemy.setAttribute(
-          "geometry",
-          "primitive: box; width:0.35; height:0.6; depth:0.35"
-        );
-        enemy.setAttribute(
-          "material",
-          "color:#5a5a5a; emissive:#121212; roughness:0.85"
-        );
-        enemy.setAttribute("hittable", "");
-        enemy.setAttribute("enemy", "");
-        enemy.setAttribute("enemy-mover", "");
-        enemy.setAttribute("enemy-laser", "");
-        this.el.sceneEl.appendChild(enemy);
-        this.enemies.push(enemy);
+      if (this.data.spawnBoxes) {
+        for (let i = 0; i < toSpawn; i++) {
+          const enemy = document.createElement("a-entity");
+          const pos = spawns.length
+            ? spawns[i % spawns.length].getAttribute("position")
+            : { x: Math.random() * 10 - 5, y: 1, z: Math.random() * 10 - 5 };
+          enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
+          enemy.setAttribute(
+            "geometry",
+            "primitive: box; width:0.35; height:0.6; depth:0.35"
+          );
+          enemy.setAttribute(
+            "material",
+            "color:#5a5a5a; emissive:#121212; roughness:0.85"
+          );
+          enemy.setAttribute("hittable", "");
+          enemy.setAttribute("enemy", "");
+          enemy.setAttribute("enemy-mover", "");
+          enemy.setAttribute("enemy-laser", "");
+          this.el.sceneEl.appendChild(enemy);
+          this.enemies.push(enemy);
+        }
       }
 
       // Get recorder

@@ -288,6 +288,7 @@
       randomGround: { type: "int", default: 4 },
       minDistanceFromPlayer: { type: "number", default: 6 },
       spawnForwardMinZ: { type: "number", default: 0 },
+      usePrimitive: { type: "boolean", default: false },
     },
     init() {
       this.round = 1;
@@ -381,10 +382,14 @@
         }
         const pos = this._ensureFar(this._placeNear(basePos));
         enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
-        enemy.setAttribute("gltf-model", "assets/goose.glb");
         const s = this.data.scale;
         enemy.setAttribute("scale", `${s} ${s} ${s}`);
-        enemy.setAttribute("goose-anim", "");
+        if (this.data.usePrimitive) {
+          this._buildPrimitiveGoose(enemy);
+        } else {
+          enemy.setAttribute("gltf-model", "assets/goose.glb");
+          enemy.setAttribute("goose-anim", "");
+        }
         enemy.setAttribute(
           "enemy-mover",
           `activationRadius:${this.data.activationRadius}`
@@ -393,10 +398,16 @@
           "enemy-laser",
           `activationRadius:${this.data.activationRadius}`
         );
-        enemy.setAttribute(
-          "material",
-          "color:#4a4a4a; emissive:#0d0d0d; roughness:0.85"
-        );
+        if (!this.data.usePrimitive) {
+          enemy.addEventListener('model-loaded', (e)=>{
+            console.log('[goose] model loaded', e.detail);
+          });
+          enemy.addEventListener('model-error', (e)=>{
+            console.warn('[goose] model load failed, using primitive fallback', e.detail);
+            enemy.removeAttribute('gltf-model');
+            this._buildPrimitiveGoose(enemy);
+          });
+        }
         this.scene.appendChild(enemy);
       }
       for (let g = 0; g < this.data.randomGround; g++) {
@@ -405,8 +416,12 @@
         enemy.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
         const s = this.data.scale;
         enemy.setAttribute("scale", `${s} ${s} ${s}`);
-        enemy.setAttribute("gltf-model", "assets/goose.glb");
-        enemy.setAttribute("goose-anim", "");
+        if (this.data.usePrimitive) {
+          this._buildPrimitiveGoose(enemy);
+        } else {
+          enemy.setAttribute("gltf-model", "assets/goose.glb");
+          enemy.setAttribute("goose-anim", "");
+        }
         enemy.setAttribute(
           "enemy-mover",
           `activationRadius:${this.data.activationRadius}`
@@ -415,12 +430,47 @@
           "enemy-laser",
           `activationRadius:${this.data.activationRadius}`
         );
-        enemy.setAttribute(
-          "material",
-          "color:#4a4a4a; emissive:#0d0d0d; roughness:0.85"
-        );
+        if (!this.data.usePrimitive) {
+          enemy.addEventListener('model-loaded', (e)=>{
+            console.log('[goose] model loaded', e.detail);
+          });
+          enemy.addEventListener('model-error', (e)=>{
+            console.warn('[goose] model load failed, using primitive fallback', e.detail);
+            enemy.removeAttribute('gltf-model');
+            this._buildPrimitiveGoose(enemy);
+          });
+        }
         this.scene.appendChild(enemy);
       }
     },
+    _buildPrimitiveGoose(root){
+      // Simple stylized goose: body (capsule via two spheres + cylinder), neck, head, beak, legs
+      const mk = (geom, mat, pos, scale)=>{
+        const e=document.createElement('a-entity');
+        e.setAttribute('geometry', geom);
+        e.setAttribute('material', mat);
+        e.setAttribute('position', pos);
+        if(scale) e.setAttribute('scale', scale);
+        root.appendChild(e);
+        return e;
+      };
+      // Body
+      mk('primitive:sphere; radius:0.5', 'color:#ffffff; roughness:0.8', '0 0.55 0', '1 0.7 1.4');
+      // Neck
+      mk('primitive:cylinder; radius:0.12; height:0.8', 'color:#ffffff; roughness:0.8', '0 1.15 0.2');
+      // Head
+      mk('primitive:sphere; radius:0.18', 'color:#ffffff; roughness:0.75', '0 1.55 0.35');
+      // Beak
+      mk('primitive:cone; radiusBottom:0.09; radiusTop:0.02; height:0.22', 'color:#ffb347; emissive:#663300; roughness:0.6', '0 1.55 0.52');
+      // Eyes
+      const eyeL = mk('primitive:sphere; radius:0.035', 'color:#111111', '-0.07 1.57 0.42');
+      const eyeR = mk('primitive:sphere; radius:0.035', 'color:#111111', '0.07 1.57 0.42');
+      // Legs
+      mk('primitive:cylinder; radius:0.06; height:0.55', 'color:#ffb347; roughness:0.5', '-0.15 0.27 0');
+      mk('primitive:cylinder; radius:0.06; height:0.55', 'color:#ffb347; roughness:0.5', '0.15 0.27 0');
+      // Feet
+      mk('primitive:box; width:0.22; height:0.05; depth:0.28', 'color:#ffb347; roughness:0.4', '-0.15 0.02 0.05');
+      mk('primitive:box; width:0.22; height:0.05; depth:0.28', 'color:#ffb347; roughness:0.4', '0.15 0.02 0.05');
+    }
   });
 })();

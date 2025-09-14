@@ -27,6 +27,10 @@ aframeReady(() => {
         this.buildLinear();
       } else if (this.data.layout === 'square') {
         this.buildSquare();
+      } else if (this.data.layout === 'static') {
+        this.buildStatic();
+      } else if (this.data.layout === 'empty') {
+        this.buildEmpty();
       } else {
         this.buildBase();
         this.buildPlatforms();
@@ -150,6 +154,28 @@ aframeReady(() => {
       }
     },
     buildSpawnPoints() {
+      // Radial layout spawn points: subset of existing platforms
+      this.platforms
+        .slice(0, Math.min(12, this.platforms.length))
+        .forEach((p) => {
+          const pos = p.getAttribute("position");
+            const sp = document.createElement("a-entity");
+          sp.setAttribute(
+            "position",
+            `${pos.x} ${Number(pos.y) + 0.4} ${pos.z}`
+          );
+          sp.setAttribute("class", this.data.spawnClass);
+          sp.setAttribute(
+            "geometry",
+            "primitive: ring; radiusInner:0.2; radiusOuter:0.35; segmentsTheta:24"
+          );
+          sp.setAttribute(
+            "material",
+            "color:#3eff8c; emissive:#0a391b; opacity:0.35; transparent:true"
+          );
+          this.el.appendChild(sp);
+        });
+    },
     buildSquare(){
       // Square arena parameters derived from radius (treat radius as half side length approximate)
       const half = this.data.radius; // reuse existing radius field for scale
@@ -175,7 +201,7 @@ aframeReady(() => {
         {x:0,z:half, w:side, d:wallT}, // north edge
         {x:half,z:0, w:wallT, d:side}, // east edge
         {x:-half,z:0, w:wallT, d:side}, // west edge
-        {x:0,z:-half, w:side*0.6, d:wallT}, // south edge left part
+        {x:0,z:-half, w:side*0.6, d:wallT}, // south edge partial (leave entrance opening)
       ];
       edges.forEach(e=>{
         const wEnt=document.createElement('a-entity');
@@ -220,29 +246,70 @@ aframeReady(() => {
         sp.setAttribute('material','color:#3eff8c; emissive:#0a391b; opacity:0.4; transparent:true');
         this.el.appendChild(sp);
       });
-    }
-      // Designate some platform centers as spawn points
-      this.platforms
-        .slice(0, Math.min(12, this.platforms.length))
-        .forEach((p, i) => {
-          const pos = p.getAttribute("position");
-          const sp = document.createElement("a-entity");
-          sp.setAttribute(
-            "position",
-            `${pos.x} ${Number(pos.y) + 0.4} ${pos.z}`
-          );
-          sp.setAttribute("class", this.data.spawnClass);
-          // Visual marker (subtle)
-          sp.setAttribute(
-            "geometry",
-            "primitive: ring; radiusInner:0.2; radiusOuter:0.35; segmentsTheta:24"
-          );
-          sp.setAttribute(
-            "material",
-            "color:#3eff8c; emissive:#0a391b; opacity:0.35; transparent:true"
-          );
-          this.el.appendChild(sp);
-        });
     },
+    buildStatic(){
+      // Deterministic handcrafted layout: central plaza + four corner towers + side bridges.
+      this.platforms = [];
+      const plazaSize = 40;
+      const plaza = document.createElement('a-entity');
+      plaza.setAttribute('geometry',`primitive: box; width:${plazaSize}; height:0.5; depth:${plazaSize}`);
+      plaza.setAttribute('position','0 0 0');
+      plaza.setAttribute('grid-material','cellSize:2; lineThickness:0.12; roughness:0.94; metalness:0.03');
+      this.el.appendChild(plaza);
+
+      // (Removed) Corner towers were here; keeping ground more open per request.
+
+      // Side elevated bridges
+      const bridges = [
+        {x:0,y:3,z:18,w:26,d:4,rot:0}, // north
+        {x:0,y:3,z:-18,w:26,d:4,rot:0}, // south
+        {x:18,y:3,z:0,w:4,d:26,rot:0}, // east
+        {x:-18,y:3,z:0,w:4,d:26,rot:0}, // west
+      ];
+      bridges.forEach(b=>{
+        const br=document.createElement('a-entity');
+        br.setAttribute('geometry',`primitive: box; width:${b.w}; height:0.4; depth:${b.d}`);
+        br.setAttribute('position',`${b.x} ${b.y} ${b.z}`);
+        br.setAttribute('grid-material','cellSize:2; lineThickness:0.12; roughness:0.92; metalness:0.04');
+        this.el.appendChild(br);
+        this.platforms.push(br);
+      });
+
+      // Small mid platforms
+      const mids = [
+        {x:0,y:2,z:10,w:8,d:6},
+        {x:0,y:2,z:-10,w:8,d:6},
+        {x:10,y:2,z:0,w:6,d:8},
+        {x:-10,y:2,z:0,w:6,d:8},
+        {x:0,y:6,z:0,w:10,d:10}, // high center
+      ];
+      mids.forEach(m=>{
+        const mp=document.createElement('a-entity');
+        mp.setAttribute('geometry',`primitive: box; width:${m.w}; height:0.4; depth:${m.d}`);
+        mp.setAttribute('position',`${m.x} ${m.y} ${m.z}`);
+        mp.setAttribute('grid-material','cellSize:2; lineThickness:0.12; roughness:0.9; metalness:0.05');
+        this.el.appendChild(mp);
+        this.platforms.push(mp);
+      });
+
+      // Spawn points: choose a curated subset; avoid ground plaza center for variety
+      const spawnOrigins = this.platforms.filter(p=>{
+        const pos = p.getAttribute('position');
+        return !(Math.abs(pos.x) < 6 && Math.abs(pos.z) < 6 && pos.y < 1);
+  }).slice(0, 18);
+      spawnOrigins.forEach(p=>{
+        const pos = p.getAttribute('position');
+        const sp=document.createElement('a-entity');
+        sp.setAttribute('position',`${pos.x} ${Number(pos.y)+0.5} ${pos.z}`);
+        sp.setAttribute('class', this.data.spawnClass);
+        sp.setAttribute('geometry','primitive:ring; radiusInner:0.25; radiusOuter:0.42; segmentsTheta:30');
+        sp.setAttribute('material','color:#3eff8c; emissive:#0a391b; opacity:0.4; transparent:true');
+        this.el.appendChild(sp);
+      });
+    },
+    buildEmpty(){
+      // Intentionally create nothing (ground plane in scene remains). Keep platforms array empty.
+      this.platforms = [];
+    }
   });
 });
