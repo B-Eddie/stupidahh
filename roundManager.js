@@ -3,6 +3,7 @@ aframeReady(() => {
   AFRAME.registerComponent("round-manager", {
     schema: {
       spawnBoxes: { type: "boolean", default: true },
+      healthMax: { type: "int", default: 5 }
     },
     init() {
       this.enemies = [];
@@ -10,6 +11,7 @@ aframeReady(() => {
       this.round = 1;
       this.recorder = null;
       this.ghostReplay = null;
+      this.damageThisRound = 0;
 
       this.el.sceneEl.addEventListener("enemyKilled", () => {
         this.killed++;
@@ -27,6 +29,8 @@ aframeReady(() => {
     startRound() {
       this.killed = 0;
       this.enemies = [];
+      this.damageThisRound = 0;
+      this.updateHUD();
       // Collect spawn points (dynamic difficulty grows with round)
       const spawns = Array.from(
         this.el.sceneEl.querySelectorAll(".enemy-spawn")
@@ -95,8 +99,25 @@ aframeReady(() => {
       }, 10000); // 10 seconds replay
     },
     playerHit() {
-      // For now, just reset
+      this.damageThisRound++;
+      this.updateHUD();
+      if (this.damageThisRound >= this.data.healthMax) {
+        this.playerDead();
+      }
+    },
+    playerDead() {
+      // Emit event for external systems (e.g., UI, sounds)
+      this.el.sceneEl.emit('playerDead', { round: this.round, damage: this.damageThisRound });
+      // Quick fade / reset approach: immediately restart round (could add delay or death screen)
       this.startRound();
     },
+    updateHUD() {
+      const el = document.getElementById('damageCount');
+      if (el) {
+        el.textContent = `${this.damageThisRound}/${this.data.healthMax}`;
+      }
+      const roundEl = document.getElementById('roundNum');
+      if (roundEl) roundEl.textContent = this.round;
+    }
   });
 });
