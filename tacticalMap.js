@@ -372,6 +372,16 @@
         );
         this.el.appendChild(sp);
       });
+      // Log coordinates of all green circle (enemy-spawn) markers once.
+      console.log(
+        "[tactical-map] enemy-spawn coordinates:",
+        spawnPoints.map((p, i) => ({ i, x: p.x, y: p.y, z: p.z }))
+      );
+      // Emit a custom event so external systems (spawn manager) know markers exist.
+      // Use next microtask to ensure DOM append has propagated.
+      Promise.resolve().then(() => {
+        this.el.emit("spawnMarkersReady", { count: spawnPoints.length });
+      });
     },
   });
 

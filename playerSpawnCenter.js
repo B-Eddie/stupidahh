@@ -14,6 +14,7 @@
       minClearRadius: { type: "number", default: 1.2 }, // horizontal clearance from solid AABB footprint
       safeSearchMaxRadius: { type: "number", default: 20 },
       safeSearchStep: { type: "number", default: 1.5 },
+      yawDegrees: { type: "number", default: 0 }, // optional facing override
     },
     init() {
       // Delay until after tactical-map builds geometry
@@ -80,6 +81,11 @@
       }
 
       pos.set(spawnX, y, spawnZ);
+      if (this.data.yawDegrees !== 0) {
+        this.el.object3D.rotation.y = THREE.MathUtils.degToRad(
+          this.data.yawDegrees
+        );
+      }
       if (this.data.debug) {
         console.log("[player-spawn-center] spawn pos", pos.toArray());
       }

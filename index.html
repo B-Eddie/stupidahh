@@ -8,6 +8,14 @@
     <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
     <!-- Local extras (remove if not needed) -->
     <script src="vendor/aframe-extras.min.js"></script>
+    <script src="directionUtil.js"></script>
+    <script src="gooseEnemies.js"></script>
+    <script src="goosePathfinding.js"></script>
+    <script src="gooseVoice.js"></script>
+    <script src="gooseBetterPhysics.js"></script>
+    <script src="gooseGrounding.js"></script>
+    <!-- Load tactical map BEFORE scene so component is registered when scene parses -->
+    <script src="tacticalMap.js"></script>
   </head>
 
   <body style="margin: 0">
@@ -70,7 +78,7 @@
         id="mapRoot"
         tactical-map="size:60; obstacleDensity:0.7; platformCount:8; wallCount:12; coverCount:15"
         tactical-lighting
-        goose-spawn-manager="scale:0.35; voiceEnabled:true; voiceProximityRadius:5.0"
+        goose-spawn-manager="scale:0.35; voiceEnabled:true; voiceProximityRadius:5.0; hardcodePositions:true; debug:true"
         hazard-damage
       ></a-entity>
       <!-- Lighting -->
@@ -93,7 +101,7 @@
         player-recorder
         player-health
         player-collision-smooth="radius:0.32; height:1.7; stepHeight:0.6; stepLerpMs:0; stepForwardDot:0.1; requireDescending:true; minDescendSpeed:-0.15"
-        player-spawn-center="snapToGround:true; offsetX:0; offsetZ:0; debug:false"
+        player-spawn-center="snapToGround:false; y:0; offsetX:29; offsetZ:0; yawDegrees:90; debug:false"
         player-gravity-jump="jumpSpeed:10; gravity:-10; rayLength:1; clampFloorY:0; hardMinY:-5; arenaHalfSize:29; respawnCenter:0 0; oobTeleportY:0.05"
       >
         <a-entity
@@ -171,9 +179,7 @@
     <script src="roundManager.js" defer></script>
     <script src="gridMaterial.js" defer></script>
     <script src="map.js" defer></script>
-    <script src="gooseEnemies.js" defer></script>
-    <script src="gooseVoice.js" defer></script>
-    <script src="tacticalMap.js" defer></script>
+    <!-- Removed duplicate includes for gooseEnemies, gooseVoice, tacticalMap (now loaded in head) -->
     <script src="playerSpawnCenter.js" defer></script>
     <script src="playerHealth.js" defer></script>
     <script src="gooseTimeline.js" defer></script>

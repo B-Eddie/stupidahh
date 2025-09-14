@@ -131,6 +131,10 @@
       activationRadius: { type: "number", default: 8 },
       variance: { type: "number", default: 400 },
       forwardAxis: { type: "string", default: "-z" }, // enemy model facing
+      requireChase: { type: "boolean", default: false }, // if true only fire when goose-brain mode==='chase'
+      chaseComponent: { type: "string", default: "goose-brain" }, // component holding mode
+      aimAtTarget: { type: "boolean", default: false }, // if true, dynamically aim beam directly at target position instead of using forwardAxis
+      autoOffset: { type: "boolean", default: true }, // compute muzzle offset from model bounds if true
     },
     init() {
       this.last = 0;
@@ -142,6 +146,31 @@
       this.targetRig = document.querySelector("#rig");
       this.active = false; // random phase so clusters stagger
       this.last = -(Math.random() * this.data.variance);
+      this._chaseRef = null;
+      this._autoOffsetComputed = false;
+      if (this.data.autoOffset) this._tryComputeOffset();
+      this.el.addEventListener("model-loaded", () => {
+        if (this.data.autoOffset) this._tryComputeOffset(true);
+      });
+    },
+    _tryComputeOffset(force) {
+      if (this._autoOffsetComputed && !force) return;
+      const mesh = this.el.getObject3D("mesh");
+      if (!mesh) return; // will retry on model-loaded
+      const box = new THREE.Box3().setFromObject(mesh);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      // Assume beak points toward -Z in model space; muzzle near front center.
+      const frontZ = box.min.z; // since forwardAxis default -z
+      const muzzleY = box.min.y + size.y * 0.65; // slightly below head top
+      const muzzleX = center.x; // centered horizontally
+      const forwardOffset = Math.min(-frontZ + 0.02, size.z * 0.6);
+      this.data.offset.x = muzzleX;
+      this.data.offset.y = muzzleY;
+      this.data.offset.z = -forwardOffset; // extend forward along -Z
+      this._autoOffsetComputed = true;
     },
     tick(t) {
       if (!this.targetRig) return;
@@ -152,6 +181,12 @@
         this.active = true;
       }
       if (!this.active) return;
+      if (this.data.requireChase) {
+        if (!this._chaseRef) {
+          this._chaseRef = this.el.components[this.data.chaseComponent];
+        }
+        if (!this._chaseRef || this._chaseRef.mode !== "chase") return; // only fire while chasing
+      }
       if (t - this.last < this.data.rate) return;
       this.last = t;
       this.fire();
@@ -160,13 +195,23 @@
       const o3 = this.el.object3D;
       this.tmpO.set(this.data.offset.x, this.data.offset.y, this.data.offset.z);
       o3.localToWorld(this.tmpO);
-      // Base forward (-Z local) then adjust depending on forwardAxis
-      this.tmpDir.copy(
-        AFRAME.utils.directionUtil.getForward(this.el, this.data.forwardAxis)
-      );
-      const end = this.tmpO
-        .clone()
-        .addScaledVector(this.tmpDir, this.data.range);
+      let end;
+      if (this.data.aimAtTarget && this.targetRig) {
+        // Aim directly toward current target position
+        this.targetRig.object3D.getWorldPosition(this.tmpDir);
+        // Direction from muzzle to player
+        this.tmpDir.sub(this.tmpO).normalize();
+        end = this.tmpO.clone().addScaledVector(this.tmpDir, this.data.range);
+        // Also rotate enemy to face firing direction on Y only (optional subtle alignment)
+        const yaw = Math.atan2(this.tmpDir.x, this.tmpDir.z);
+        o3.rotation.set(0, yaw, 0);
+      } else {
+        // Base forward (-Z local) then adjust depending on forwardAxis
+        this.tmpDir.copy(
+          AFRAME.utils.directionUtil.getForward(this.el, this.data.forwardAxis)
+        );
+        end = this.tmpO.clone().addScaledVector(this.tmpDir, this.data.range);
+      }
       if (this.sys) {
         this.sys.registerBeam({
           start: this.tmpO,
@@ -174,6 +219,38 @@
           radius: 0.12,
           visibleMs: 2000,
         });
+      }
+      // Emit event for round manager tracking
+      this.el.sceneEl.emit("enemyLaserShot", {
+        start: this.tmpO.clone(),
+        end: end.clone(),
+      });
+    },
+  });
+
+  // Replay previous-round enemy shots as timed hazards in round2
+  A.registerComponent("enemy-shot-replay", {
+    schema: { shots: { type: "array", default: [] } },
+    init() {
+      this.startTime = performance.now();
+      this.index = 0;
+      this.sys = this.el.sceneEl.systems["hazard-system"];
+    },
+    tick() {
+      if (!this.data.shots || !this.data.shots.length) return;
+      const elapsed = performance.now() - this.startTime;
+      while (this.index < this.data.shots.length && this.data.shots[this.index].time <= elapsed) {
+        const s = this.data.shots[this.index];
+        if (this.sys) {
+          this.sys.registerBeam({
+            start: new THREE.Vector3(s.start.x, s.start.y, s.start.z),
+            end: new THREE.Vector3(s.end.x, s.end.y, s.end.z),
+            radius: 0.12,
+            visibleMs: 1800,
+          });
+        }
+        // Damage check vs player similar to hazard-damage system via beam persistence
+        this.index++;
       }
     },
   });

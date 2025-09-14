@@ -35,6 +35,9 @@
       this.el.addEventListener("player-stepped", () => {
         if (this.velY < 0) this.velY = 0;
       });
+      this.el.addEventListener("player-ceiling", () => {
+        if (this.velY > 0) this.velY = 0; // stop upward motion immediately
+      });
       window.addEventListener("keydown", (e) => {
         this.keyDown[e.code] = true;
       });

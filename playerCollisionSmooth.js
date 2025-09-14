@@ -83,6 +83,7 @@
     _solveCollisions(pos, verticalVel, moveLen) {
       const r = this.data.radius;
       const rSq = r * r;
+      const playerTop = () => pos.y + this.data.height; // helper
       for (let i = 0; i < this.solids.length; i++) {
         const box = this.solids[i].box;
         // vertical reject
@@ -134,6 +135,18 @@
         // Slide: push minimally along contact normal
         pos.x += this.contactNormal.x * penetration;
         pos.z += this.contactNormal.z * penetration;
+
+        // Ceiling handling: only if feet are below the box underside and head crosses into it while ascending
+        if (verticalVel > 0) {
+          const headY = playerTop();
+          const undersideY = box.min.y;
+          // Feet clearly below underside and head passes into underside plane
+          if (pos.y < undersideY - 0.0005 && headY > undersideY) {
+            const penetration = headY - undersideY;
+            pos.y -= penetration + 0.001; // place just below
+            this.el.emit("player-ceiling", { box });
+          }
+        }
       }
     },
   });

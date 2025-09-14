@@ -115,18 +115,24 @@ aframeReady(() => {
       });
       const hits = raycaster.intersectObjects(meshes, true);
       if (hits.length) {
-        const hit = hits[0].object;
-        // Example reaction: briefly tint the hit object
-        const old =
-          hit.material && hit.material.color
-            ? hit.material.color.clone()
+        const hitObj = hits[0].object;
+        const hitEntity = hitObj.el || null;
+        // Visual feedback tint
+        const oldColor =
+          hitObj.material && hitObj.material.color
+            ? hitObj.material.color.clone()
             : null;
-        if (hit.material && hit.material.color) {
-          hit.material.color.setRGB(1, 0.2, 0.2);
-          setTimeout(() => old && hit.material.color.copy(old), 120);
+        if (hitObj.material && hitObj.material.color) {
+          hitObj.material.color.setRGB(1, 0.2, 0.2);
+          setTimeout(() => oldColor && hitObj.material.color.copy(oldColor), 120);
         }
-        // Emit event for hit
-        this.el.emit("hit", { target: hit });
+        // Emit hit on the struck entity if present (so enemy component can react)
+        if (hitEntity) {
+          hitEntity.emit("hit", { rayObject: hitObj, gun: this.el }, false);
+        } else {
+          // fallback: emit on gun
+          this.el.emit("hit", { target: hitObj });
+        }
       }
       // Emit shot event
       this.el.emit("shot", {
