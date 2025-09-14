@@ -90,14 +90,7 @@
       makeSide('x', half, size, false);  // East
       makeSide('x', -half, size, false); // West
 
-      // Ensure player (rig) not spawning outside or embedded: reposition center if outside
-      const rig = document.querySelector('#rig');
-      if (rig) {
-        const p = rig.object3D.position;
-        if (Math.abs(p.x) > half - 2 || Math.abs(p.z) > half - 2) {
-          p.set(0, p.y, 0); // keep current Y (e.g., 0), center X/Z
-        }
-      }
+      // Player spawn now handled by player-spawn-center component.
     },
 
     createCentralStructures() {
