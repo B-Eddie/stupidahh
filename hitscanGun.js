@@ -21,14 +21,19 @@ aframeReady(() => {
 
       // Visualize a brief tracer (avoid deprecated/unknown 'line' shader)
       const tracerLen = 30; // meters
-      const end = origin.clone().add(direction.clone().multiplyScalar(tracerLen));
+      const end = origin
+        .clone()
+        .add(direction.clone().multiplyScalar(tracerLen));
       const tracer = document.createElement("a-entity");
       if (AFRAME.components && AFRAME.components["line"]) {
         tracer.setAttribute(
           "line",
           `start: ${origin.x} ${origin.y} ${origin.z}; end: ${end.x} ${end.y} ${end.z}; color: #ffeb91`
         );
-        tracer.setAttribute("material", "color: #ffeb91; transparent: true; opacity: 0.9");
+        tracer.setAttribute(
+          "material",
+          "color: #ffeb91; transparent: true; opacity: 0.9"
+        );
       } else {
         // Fallback: thin cylinder aligned along direction
         const mid = origin.clone().add(end).multiplyScalar(0.5);
@@ -36,7 +41,10 @@ aframeReady(() => {
         const height = tracerLen;
         // Compute rotation to align cylinder forward (0 1 0 base orientation => align with direction)
         const up = new THREE.Vector3(0, 1, 0);
-        const quat = new THREE.Quaternion().setFromUnitVectors(up, direction.clone().normalize());
+        const quat = new THREE.Quaternion().setFromUnitVectors(
+          up,
+          direction.clone().normalize()
+        );
         const euler = new THREE.Euler().setFromQuaternion(quat, "YXZ");
         cyl.setAttribute(
           "geometry",
