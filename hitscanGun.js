@@ -124,7 +124,10 @@ aframeReady(() => {
             : null;
         if (hitObj.material && hitObj.material.color) {
           hitObj.material.color.setRGB(1, 0.2, 0.2);
-          setTimeout(() => oldColor && hitObj.material.color.copy(oldColor), 120);
+          setTimeout(
+            () => oldColor && hitObj.material.color.copy(oldColor),
+            120
+          );
         }
         // Emit hit on the struck entity if present (so enemy component can react)
         if (hitEntity) {

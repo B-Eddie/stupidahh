@@ -239,7 +239,10 @@
     tick() {
       if (!this.data.shots || !this.data.shots.length) return;
       const elapsed = performance.now() - this.startTime;
-      while (this.index < this.data.shots.length && this.data.shots[this.index].time <= elapsed) {
+      while (
+        this.index < this.data.shots.length &&
+        this.data.shots[this.index].time <= elapsed
+      ) {
         const s = this.data.shots[this.index];
         if (this.sys) {
           this.sys.registerBeam({
