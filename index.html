@@ -94,6 +94,7 @@
         player-health
         player-collision="width:0.6; depth:0.6; height:1.7"
   player-spawn-center="snapToGround:false; y:2; offsetX:0; offsetZ:0; debug:true"
+  player-gravity-jump="jumpSpeed:4.5; gravity:-10; enableDoubleJump:false; rayLength:2"
       >
         <a-entity
           id="camera"
@@ -174,5 +175,6 @@
   <script src="playerSpawnCenter.js" defer></script>
     <script src="playerHealth.js" defer></script>
     <script src="gooseTimeline.js" defer></script>
+    <script src="playerGravity.js" defer></script>
   </body>
 </html>
