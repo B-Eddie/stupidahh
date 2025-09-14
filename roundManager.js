@@ -3,7 +3,7 @@ aframeReady(() => {
   AFRAME.registerComponent("round-manager", {
     schema: {
       spawnBoxes: { type: "boolean", default: true },
-      healthMax: { type: "int", default: 5 }
+      healthMax: { type: "int", default: 5 },
     },
     init() {
       this.enemies = [];
@@ -107,17 +107,20 @@ aframeReady(() => {
     },
     playerDead() {
       // Emit event for external systems (e.g., UI, sounds)
-      this.el.sceneEl.emit('playerDead', { round: this.round, damage: this.damageThisRound });
+      this.el.sceneEl.emit("playerDead", {
+        round: this.round,
+        damage: this.damageThisRound,
+      });
       // Quick fade / reset approach: immediately restart round (could add delay or death screen)
       this.startRound();
     },
     updateHUD() {
-      const el = document.getElementById('damageCount');
+      const el = document.getElementById("damageCount");
       if (el) {
         el.textContent = `${this.damageThisRound}/${this.data.healthMax}`;
       }
-      const roundEl = document.getElementById('roundNum');
+      const roundEl = document.getElementById("roundNum");
       if (roundEl) roundEl.textContent = this.round;
-    }
+    },
   });
 });

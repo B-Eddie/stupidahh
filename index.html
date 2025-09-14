@@ -25,7 +25,8 @@
         z-index: 10;
       "
     >
-  ROUND <span id="roundNum">1</span> | HAZARDS <span id="hazCount">0</span> | DAMAGE <span id="damageCount">0/5</span>
+      ROUND <span id="roundNum">1</span> | HAZARDS
+      <span id="hazCount">0</span> | DAMAGE <span id="damageCount">0/5</span>
     </div>
     <div
       id="gooseVoiceHud"
@@ -42,7 +43,7 @@
         z-index: 10;
         opacity: 0;
         transition: opacity 0.3s ease;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0, 0, 0, 0.7);
         padding: 8px 16px;
         border-radius: 8px;
         border: 2px solid #ff6b6b;
@@ -50,7 +51,9 @@
         text-align: center;
       "
     >
-      <div style="font-size: 12px; color: #ffaa00; margin-bottom: 4px;">🦢 GOOSE SAYS:</div>
+      <div style="font-size: 12px; color: #ffaa00; margin-bottom: 4px">
+        🦢 GOOSE SAYS:
+      </div>
       <div id="gooseVoiceText"></div>
     </div>
     <a-scene
