@@ -13,7 +13,8 @@
 
   async function fetchGeminiRoasts(options = {}) {
     const {
-      apiKey = window.NEXT_PUBLIC_GEMINI_API_KEY || localStorage.getItem("NEXT_PUBLIC_GEMINI_API_KEY"),
+      apiKey = window.NEXT_PUBLIC_GEMINI_API_KEY ||
+        localStorage.getItem("NEXT_PUBLIC_GEMINI_API_KEY"),
       model = "gemini-1.5-flash",
       count = 24,
       temperature = 0.9,
@@ -310,7 +311,7 @@
       activationRadius: { type: "number", default: 8 },
       tickRate: { type: "number", default: 50 },
       avoidanceRadius: { type: "number", default: 2.0 },
-      platformAware: { type: "boolean", default: true }
+      platformAware: { type: "boolean", default: true },
     },
 
     init() {
@@ -343,13 +344,16 @@
       // Basic movement towards player
       if (dist > this.data.stop) {
         dir.normalize();
-        
+
         // Add avoidance behavior for obstacles
         if (this.data.platformAware) {
           this.addAvoidance(dir);
         }
-        
-        obj.position.addScaledVector(dir, (this.data.speed * (this.data.tickRate || dt)) / 1000);
+
+        obj.position.addScaledVector(
+          dir,
+          (this.data.speed * (this.data.tickRate || dt)) / 1000
+        );
       }
 
       // Face movement direction
@@ -363,16 +367,21 @@
       // Simple obstacle avoidance by checking for nearby walls/platforms
       const obj = this.el.object3D;
       const pos = obj.position;
-      
+
       // Check for obstacles in movement direction
       this.raycaster.set(pos, moveDir);
-      const obstacles = this.el.sceneEl.querySelectorAll('a-entity[geometry*="box"]');
-      
+      const obstacles = this.el.sceneEl.querySelectorAll(
+        'a-entity[geometry*="box"]'
+      );
+
       for (let obstacle of obstacles) {
-        const obstacleMesh = obstacle.getObject3D('mesh');
+        const obstacleMesh = obstacle.getObject3D("mesh");
         if (obstacleMesh && obstacle !== this.el) {
           const intersects = this.raycaster.intersectObject(obstacleMesh);
-          if (intersects.length > 0 && intersects[0].distance < this.data.avoidanceRadius) {
+          if (
+            intersects.length > 0 &&
+            intersects[0].distance < this.data.avoidanceRadius
+          ) {
             // Steer away from obstacle
             const avoidDir = intersects[0].point.clone().sub(pos).normalize();
             const perpendicular = new THREE.Vector3(-avoidDir.z, 0, avoidDir.x);
@@ -382,7 +391,7 @@
           }
         }
       }
-    }
+    },
   });
 
   // Enhanced goose movement for tactical maps
@@ -394,7 +403,7 @@
       activationRadius: { type: "number", default: 8 },
       tickRate: { type: "number", default: 50 },
       avoidanceRadius: { type: "number", default: 2.0 },
-      platformAware: { type: "boolean", default: true }
+      platformAware: { type: "boolean", default: true },
     },
 
     init() {
@@ -427,13 +436,16 @@
       // Basic movement towards player
       if (dist > this.data.stop) {
         dir.normalize();
-        
+
         // Add avoidance behavior for obstacles
         if (this.data.platformAware) {
           this.addAvoidance(dir);
         }
-        
-        obj.position.addScaledVector(dir, (this.data.speed * (this.data.tickRate || dt)) / 1000);
+
+        obj.position.addScaledVector(
+          dir,
+          (this.data.speed * (this.data.tickRate || dt)) / 1000
+        );
       }
 
       // Face movement direction
@@ -447,16 +459,21 @@
       // Simple obstacle avoidance by checking for nearby walls/platforms
       const obj = this.el.object3D;
       const pos = obj.position;
-      
+
       // Check for obstacles in movement direction
       this.raycaster.set(pos, moveDir);
-      const obstacles = this.el.sceneEl.querySelectorAll('a-entity[geometry*="box"]');
-      
+      const obstacles = this.el.sceneEl.querySelectorAll(
+        'a-entity[geometry*="box"]'
+      );
+
       for (let obstacle of obstacles) {
-        const obstacleMesh = obstacle.getObject3D('mesh');
+        const obstacleMesh = obstacle.getObject3D("mesh");
         if (obstacleMesh && obstacle !== this.el) {
           const intersects = this.raycaster.intersectObject(obstacleMesh);
-          if (intersects.length > 0 && intersects[0].distance < this.data.avoidanceRadius) {
+          if (
+            intersects.length > 0 &&
+            intersects[0].distance < this.data.avoidanceRadius
+          ) {
             // Steer away from obstacle
             const avoidDir = intersects[0].point.clone().sub(pos).normalize();
             const perpendicular = new THREE.Vector3(-avoidDir.z, 0, avoidDir.x);
@@ -466,20 +483,32 @@
           }
         }
       }
-    }
+    },
   });
 
-  // Enhanced goose spawn manager to include voice component
-  A.registerComponent("goose-spawn-manager-with-voice", {
+  // Unified goose spawn manager (combines legacy randomization + voice support)
+  A.registerComponent("goose-spawn-manager", {
     schema: {
       perRoundBase: { type: "int", default: 3 },
       perRoundAdd: { type: "int", default: 2 },
+      // Base scale (used if no min/max supplied)
       scale: { type: "number", default: 0.35 },
+      // Optional size variation
+      scaleMin: { type: "number", default: 0.25 },
+      scaleMax: { type: "number", default: 0.55 },
+      // Movement speed variation
+      speedMin: { type: "number", default: 0.55 },
+      speedMax: { type: "number", default: 1.2 },
+      // Laser fire rate variation (ms)
+      laserRateMin: { type: "number", default: 1100 },
+      laserRateMax: { type: "number", default: 1900 },
+      sizeSpeedLink: { type: "boolean", default: true },
       activationRadius: { type: "number", default: 8 },
       randomGround: { type: "int", default: 4 },
       minDistanceFromPlayer: { type: "number", default: 6 },
       spawnForwardMinZ: { type: "number", default: 0 },
       usePrimitive: { type: "boolean", default: false },
+      // Voice options
       voiceEnabled: { type: "boolean", default: true },
       voiceProximityRadius: { type: "number", default: 5.0 },
     },
@@ -556,6 +585,39 @@
       return { x: 10, y: 0.5, z: 10 };
     },
 
+    _randRange(a, b) {
+      return a + (b - a) * Math.random();
+    },
+    _pickScale() {
+      const { scaleMin, scaleMax, scale } = this.data;
+      if (scaleMin && scaleMax && scaleMax > scaleMin)
+        return this._randRange(scaleMin, scaleMax);
+      return scale;
+    },
+    _pickSpeed(size) {
+      const { speedMin, speedMax, sizeSpeedLink, scaleMin, scaleMax } =
+        this.data;
+      let base = this._randRange(speedMin, speedMax);
+      if (sizeSpeedLink && scaleMax > scaleMin) {
+        const t = (size - scaleMin) / (scaleMax - scaleMin);
+        const inv = 1 - Math.min(Math.max(t, 0), 1);
+        base = speedMin + (speedMax - speedMin) * (0.4 + inv * 0.6);
+      }
+      return base;
+    },
+    _pickLaserRate(size) {
+      const { laserRateMin, laserRateMax, sizeSpeedLink, scaleMin, scaleMax } =
+        this.data;
+      if (!laserRateMin || !laserRateMax) return 1500;
+      if (sizeSpeedLink && scaleMax > scaleMin) {
+        const t = (size - scaleMin) / (scaleMax - scaleMin);
+        const inv = 1 - Math.min(Math.max(t, 0), 1);
+        return Math.round(
+          laserRateMin + (laserRateMax - laserRateMin) * (0.3 + inv * 0.7)
+        );
+      }
+      return Math.round(this._randRange(laserRateMin, laserRateMax));
+    },
     spawnBatch() {
       if (!this.scene) return;
 
@@ -570,14 +632,15 @@
         });
       }
 
-      // Spawn geese with voice component
+      const created = [];
       for (let i = 0; i < count; i++) {
-        this.spawnGoose(spawns, i);
+        created.push(this.spawnGoose(spawns, i));
       }
-
-      // Spawn random ground geese
       for (let g = 0; g < this.data.randomGround; g++) {
-        this.spawnGoose([], g, true);
+        created.push(this.spawnGoose([], g, true));
+      }
+      if (created.length) {
+        this.scene.emit("geeseSpawned", { geese: created });
       }
     },
 
@@ -599,7 +662,7 @@
       }
 
       enemy.setAttribute("position", `${basePos.x} ${basePos.y} ${basePos.z}`);
-      const s = this.data.scale;
+      const s = this._pickScale();
       enemy.setAttribute("scale", `${s} ${s} ${s}`);
 
       // Add goose model and components
@@ -611,13 +674,15 @@
       }
 
       // Add movement and combat components
+      const mvSpeed = this._pickSpeed(s).toFixed(3);
+      const laserRate = this._pickLaserRate(s);
       enemy.setAttribute(
         "tactical-goose-mover",
-        `activationRadius:${this.data.activationRadius}; speed:0.8; platformAware:true`
+        `activationRadius:${this.data.activationRadius}; speed:${mvSpeed}; platformAware:true`
       );
       enemy.setAttribute(
         "enemy-laser",
-        `activationRadius:${this.data.activationRadius}`
+        `activationRadius:${this.data.activationRadius}; rate:${laserRate}`
       );
       enemy.setAttribute("hittable", "");
       enemy.setAttribute("enemy", "");
@@ -646,6 +711,7 @@
       }
 
       this.scene.appendChild(enemy);
+      return enemy;
     },
 
     _buildPrimitiveGoose(root) {

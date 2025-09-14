@@ -41,42 +41,17 @@ aframeReady(() => {
       this.debugEntity = dbg;
     },
     computeDirection() {
-      const direction = new THREE.Vector3();
       const scene = this.el.sceneEl;
       const isAR = scene && scene.is && scene.is("ar-mode");
       if (isAR && this.data.useCameraForwardInAR && scene.camera) {
-        scene.camera.getWorldDirection(direction);
-        return direction.normalize();
+        const v = new THREE.Vector3();
+        scene.camera.getWorldDirection(v);
+        return v.normalize();
       }
-      // Base: A-Frame considers object's -Z as forward for look-controls. getWorldDirection returns -Z transformed.
-      this.el.object3D.getWorldDirection(direction); // yields world forward (-Z local)
-      // Map desired local forward axis to the world direction.
-      // If axis is +z (model faces +Z), invert.
-      switch (this.data.forwardAxis) {
-        case "+z":
-          direction.multiplyScalar(-1); // flip
-          break;
-        case "-z":
-          break; // already correct
-        case "+x": {
-          // derive +X world: take current forward (-Z) then rotate 90deg CCW around Y
-          const f = direction.clone();
-          direction.set(-f.z, f.y, f.x); // rough yaw +90
-          break;
-        }
-        case "-x": {
-          const f = direction.clone();
-          direction.set(f.z, f.y, -f.x); // yaw -90
-          break;
-        }
-        case "+y":
-        case "-y":
-          // For vertical axes, fallback to forward; vertical firing uncommon. Could refine if needed.
-          break;
-        default:
-          break;
-      }
-      return direction.normalize();
+      return AFRAME.utils.directionUtil.getForward(
+        this.el,
+        this.data.forwardAxis
+      );
     },
     fire() {
       const muzzle = this.el.object3D;
